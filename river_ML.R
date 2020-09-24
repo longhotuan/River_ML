@@ -37,7 +37,7 @@ library(colorspace)
 library(rworldmap)
 library(countrycode)
 library(usethis)
-
+library(pastecs)
 
 # Import datasets  ####
 
@@ -249,7 +249,7 @@ ml_type <- tribble(
 river_ml_data <- left_join(river_ml_data,  ml_type, by = ".id")
 river_ml_data<- river_ml_data %>% select(ML, everything())
 colnames(river_ml_data)[2] <- "id"
-# before 1980s, 1980s, 1990s, 2000s, 2010s 
+# Before 1980s, 1980s, 1990s, 2000s, 2010s ####
 
 river_ml_data$Period <- NA
 river_ml_data$Period[river_ml_data$Year < 1980] <- "< 1980s"
@@ -261,13 +261,298 @@ river_ml_data$Period[between(river_ml_data$Year, lower = 2020, upper = 2021)] <-
 river_ml_data$Period <- as.factor(river_ml_data$Period)
 river_ml_data$Period <- relevel(river_ml_data$Period, "< 1980s")
 
+
+# Categorize research to different research topics ####
+
+topic_list <- c("Water Quality/Pollution", "Heavy Metal", "Climate Change", "Land use change", "Sediment", "Eutrophication", "Groundwater",
+                "Hydrology", "Estuaries", "Hydropower and dams", "Biodiversity", "Antibiotic resistance", "Drinking water", "Fisheries", 
+                "Management", "Aquatic environment", "Biogeochemistry", "Public health", "Movement", "Spatiotempral trends", "Microbial")
+river_ml_data[, topic_list] <- NA
+
+river_ml_data$`Water Quality/Pollution`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), 
+                                                   pattern = "water quality|wqi|pollut*|contaminat*|wastewater|acidifi*|treatment")] <- 1
+river_ml_data$`Heavy Metal`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), 
+                                       pattern = "heavy metal*|mercury|lead*|cadimum*|copper*|chromium*|nickel*|arsenic*|manganese*|
+                                       cobalt*|zinc*|selenium*|silver*|antimony*|thallium*|metal*|metalloid*|radium*|bioaccumulat*|
+                                       bioavailability|copper*|iron*")] <- 1
+
+river_ml_data$`Climate Change`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "climate change*|global warming|
+                                          climate warming*|kyoto protocol|paris agreement|palaeoclimat*|climate polic*|climate")] <- 1
+
+river_ml_data$`Land use change`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "land use*|landscape|land-use|
+                                           urban*|land cover|regulated river*")] <- 1
+
+river_ml_data$Sediment[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "sediment*")] <- 1
+
+river_ml_data$Eutrophication[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "eutrophic*|entrich*|nutrient*|nitrogen*|phoph*|nitrat*")] <- 1
+
+
+river_ml_data$Groundwater[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "ground water|groundwater*|underground")] <- 1
+
+river_ml_data$Hydrology[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "hydrolog*|flood|precipitation|
+                                        streamflow|drought|runoff|run-off|surface water|rain*|landslide|floodplain|stream*|discharge|
+                                        erosion*|riparian|flow|regime*")] <- 1
+
+river_ml_data$Estuaries[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "estuar*|salin*")] <- 1
+
+river_ml_data$`Hydropower and dams`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "hydropower*|hydroelectric*|
+                                               hydro power|dam*|weir*|embankment*|dike*|ditch*|wall*|barrier*|levee*|bank*")] <- 1
+
+river_ml_data$Biodiversity[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "biodivers*|diversit*|macroinvertebrate*|fish|zoo*|
+                                      phyto*|commmunit*|diatom|species*|abundance*|macrophyte*|algae*|cyanobacteria|insect*|trout*|richness*|
+                                      macrozoobethos*|chronomidae|otolith*")] <- 1
+
+river_ml_data$`Antibiotic resistance`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "antibiotic*")] <- 1
+
+river_ml_data$`Drinking water`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "drink*|tap|potable|human consum*")] <- 1
+
+river_ml_data$Fisheries[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "fisher*|aquacult*|aquafarm*|fish* yield|
+                                   fish* harvest*|fish* sustainab*|fish* stock*")] <- 1
+
+river_ml_data$Management[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "decision|directive*|manage*|sustainable develop*|
+                                   guidline*|strateg*|DPSIR|policymak*|decision-mak*|decision mak*|decisionmak*|polic*")] <- 1
+
+river_ml_data$`Aquatic environment`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "dissolved oxygen|DO|temperature|
+                                               environment|vegetration|turbid*|organic matter|cod|bod|doc|chlorophyll|escherichia coli|coliform*|
+                                               ph|influencing factor*|physicochemical")] <- 1
+
+river_ml_data$Biogeochemistry[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "biogeochemi*|geochemi*|isotope|
+                                         biogeograph*|holocene")] <- 1
+
+river_ml_data$`Public health`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "disease*|illness*|sick*|human health|
+                                         public health|health risk*|health care|physical health|mental|maternal|child*")] <- 1
+
+river_ml_data$Movement[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern ="move*|migrat")] <- 1
+river_ml_data$`Spatiotempral trends`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "temporal*|season*|spati*")] <- 1
+river_ml_data$Microbial[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "microbi|16s rdna|fluorescence")] <- 1
+
+
 river_ml_data_final <- river_ml_data %>% select(-Affi, -Country)
-river_ml_short <- river_ml_data[,c(1:19, 515)]
+river_ml_short <- river_ml_data[,c(1:str_which(colnames(river_ml_data), "Country"), str_which(colnames(river_ml_data), "Period"):ncol(river_ml_data))]
 
 write_csv(river_ml_data_final, "river_ml_data.csv")
 write_feather(river_ml_data_final, "river_ml_data.feather")
 rm(ml_type, river_ml_data_country, river_ml_data_lat, river_ml_data_long, list_river_mlvised)
 
+#  ML types in different periods ####
+
+river_mlt_period <- river_ml_short %>% filter(Period != "2020") %>% group_by(Period, id, ML) %>% summarise(n =n())
+river_mlt_period$Period <- as.character(river_mlt_period$Period)
+# river_mlt_period <- aggregate(data = river_mlt_period, Period ~ id + ML, FUN = "summarise")
+river_mlt_period$ML <- as.factor(river_mlt_period$ML)
+river_mlt_period$ML <- factor(river_mlt_period$ML, levels = c("Supervised Learning", "Unsupervised Learning",
+                                                              "Deep Learning", "Reinforcement learning",
+                                                              "Human interpretable information extraction", "Big Data"),
+                              labels = c("Supervised Learning", "Unsupervised Learning",
+                                                               "Deep Learning", "Reinforcement Learning",
+                                                               "Human interpretable info extraction", "Big Data"))
+
+ggsave("river_mlt_periods.jpeg", ggplot(river_mlt_period, aes(x = Period, y= n, group = id)) +
+    geom_point(aes(color = id)) +
+    geom_line(aes(color = id)) +
+    theme_bw() +
+    ylab("Total number of publications") +
+    facet_wrap(.~ML, scales = "free_y") +
+    # scale_color_brewer(palette = "Dark2") +
+    theme(text=element_text(size=16),
+          strip.text.x = element_text(size=14),
+          axis.text = element_text(size=12),
+          axis.title = element_text(size=14),
+          legend.position = "bottom",
+          legend.title = element_blank(),
+          legend.text = element_text(size = 12))
+    ,  units = 'cm', height = 20, width = 30, dpi = 300)
+    
+ggsave("river_mlt_periods_grouped.jpeg", ggplot(river_mlt_period, aes(x = Period, y= n, group = id)) +
+           geom_point(aes(color = ML)) +
+           geom_line(aes(color = ML)) +
+           theme_bw() +
+           ylab("Total number of publications") +
+           facet_wrap(.~ML, scales = "free_y") +
+           scale_color_brewer(palette = "Dark2") +
+           theme(text=element_text(size=16),
+                 strip.text.x = element_text(size=14),
+                 axis.text = element_text(size=12),
+                 axis.title = element_text(size=14),
+                 legend.position = "bottom",
+                 legend.title = element_blank(),
+                 legend.text = element_text(size = 12))
+       ,  units = 'cm', height = 20, width = 30, dpi = 300)
+
+# Different research topics #### 
+
+river_research <- river_ml_short[,c(1,2,str_which(colnames(river_ml_short), "Period"):ncol(river_ml_short))]
+river_research[is.na(river_research)] <- 0
+river_research$ML <- as.factor(river_research$ML)
+river_research$ML <- factor(river_research$ML, levels = c("Supervised Learning", "Unsupervised Learning",
+                                                              "Deep Learning", "Reinforcement learning",
+                                                              "Human interpretable information extraction", "Big Data"),
+                              labels = c("Supervised Learning", "Unsupervised Learning",
+                                         "Deep Learning", "Reinforcement Learning",
+                                         "Human interpretable info extraction", "Big Data"))
+river_research$id <- as.factor(river_research$id)
+
+research_total <- as_tibble(lapply(river_research, function(x){sum(!is.na(x))}))
+
+# Over period and id
+river_research_ML_id <- aggregate(data = river_research, .~Period+id+ML, sum) 
+river_research_ML_id <- river_research_ML_id %>% pivot_longer(cols = -c(Period, id, ML), names_to = "Research Topics", values_to = "Number of publications")
+
+ggsave("research_id_period.jpeg", ggplot(river_research_ML_id %>% filter(Period != 2020), aes(x = Period, y= `Number of publications`, group = `Research Topics`)) +
+    geom_point(aes(color = `Research Topics`)) +
+    geom_line(aes(color = `Research Topics`)) +
+    theme_bw() +
+    ylab("Total number of publications") +
+    facet_wrap(.~id, scales = "free_y") +
+    # scale_color_brewer(palette = "Dark2") +
+    theme(text=element_text(size=16),
+          strip.text.x = element_text(size=14),
+          axis.text = element_text(size=12),
+          axis.title = element_text(size=14),
+          legend.position = "bottom",
+          legend.title = element_blank(),
+          legend.text = element_text(size = 12))
+    ,  units = 'cm', height = 20, width = 30, dpi = 300)
+
+
+# over period and over ML types 
+
+river_research_ML <- river_research %>% select(-id) 
+river_research_ML <- aggregate(data = river_research_ML, .~Period+ML, sum) 
+river_research_ML <- river_research_ML %>% pivot_longer(cols = -c(Period, ML), names_to = "Research Topics", values_to = "Number of publications")
+
+ggsave("research_ML_period.jpeg", ggplot(river_research_ML %>% filter(Period != 2020), aes(x = Period, y= `Number of publications`, group = `Research Topics`)) +
+           geom_point(aes(color = `Research Topics`)) +
+           geom_line(aes(color = `Research Topics`)) +
+           theme_bw() +
+           ylab("Total number of publications") +
+           facet_wrap(.~ML, scales = "free_y") +
+           # scale_color_brewer(palette = "Dark2") +
+           theme(text=element_text(size=16),
+                 strip.text.x = element_text(size=14),
+                 axis.text = element_text(size=12),
+                 axis.title = element_text(size=14),
+                 legend.position = "bottom",
+                 legend.title = element_blank(),
+                 legend.text = element_text(size = 12))
+       ,  units = 'cm', height = 20, width = 30, dpi = 300)
+
+# over periods only
+river_research_period <- river_research %>% select(-id, - ML) 
+river_research_period <- aggregate(data = river_research_period, .~Period, sum)
+river_research_period <- river_research_period %>% pivot_longer(cols = -c(Period), names_to = "Research Topics", values_to = "Number of publications")
+
+ggsave("research_period.jpeg", ggplot(river_research_period %>% filter(Period != 2020), aes(x = Period, y= `Number of publications`, group = `Research Topics`)) +
+           geom_point() +
+           geom_line() +
+           theme_bw() +
+           ylab("Total number of publications") +
+           facet_wrap(.~`Research Topics`, scales = "free_y") +
+           # scale_color_brewer(palette = "Dark2") +
+           theme(text=element_text(size=16),
+                 strip.text.x = element_text(size=14),
+                 axis.text = element_text(size=12),
+                 axis.title = element_text(size=14),
+                 legend.position = "bottom",
+                 legend.title = element_blank(),
+                 legend.text = element_text(size = 12))
+       ,  units = 'cm', height = 20, width = 30, dpi = 300)
+
+
+# split the keyword_ml at the begining into different periods and apply the function in each period (forget what is this for?)
+river_period <- split(river_ml_data, f = river_ml_data$Period)
+
+keyword_period <- map(river_period, KW_all)
+
+sum(keyword_ml$n[str_detect(tolower(keyword_ml$keyword), 
+                            pattern = "climate change*|global warming|
+                                          climate warming*|kyoto protocol|paris agreement|palaeoclimat*|climate polic*")])
+
+# Temporal trends of research rank ####
+
+river_research_rank <- river_research_period %>% arrange(Period, -`Number of publications`) %>% group_by(Period) %>% mutate(Rank = rank(desc(`Number of publications`), ties.method = "min"))
+
+ggsave("research_rank.jpeg", ggplot(river_research_rank %>% filter(Period != "< 1980s"), aes(x = Period, y= Rank, group = `Research Topics`)) +
+           geom_point() +
+           geom_line() +
+           theme_bw() +
+           ylab("Total number of publications") +
+           facet_wrap(.~`Research Topics`, scales = "free_y") +
+           scale_y_reverse() +
+           # scale_color_brewer(palette = "Dark2") +
+           theme(text=element_text(size=16),
+                 strip.text.x = element_text(size=14),
+                 axis.text = element_text(size=12),
+                 axis.title = element_text(size=14),
+                 legend.position = "bottom",
+                 legend.title = element_blank(),
+                 legend.text = element_text(size = 12))
+       ,  units = 'cm', height = 20, width = 30, dpi = 300)
+
+# divide into group  increase/decrease and stable
+river_research_rank$Trends <- NA
+for (i in seq_len(nlevels(as.factor(river_research_rank$`Research Topics`)))){
+    if (max(river_research_rank$Rank[river_research_rank$`Research Topics` == river_research_rank$`Research Topics`[i]])-
+        min(river_research_rank$Rank[river_research_rank$`Research Topics` == river_research_rank$`Research Topics`[i]]) < 3){
+        river_research_rank$Trends[river_research_rank$`Research Topics` == river_research_rank$`Research Topics`[i]] <- "Stable"
+    } else if (river_research_rank$Rank[river_research_rank$`Research Topics` == river_research_rank$`Research Topics`[i]][1]-
+          river_research_rank$Rank[river_research_rank$`Research Topics` == river_research_rank$`Research Topics`[i]][5] > 2){
+        river_research_rank$Trends[river_research_rank$`Research Topics` == river_research_rank$`Research Topics`[i]] <- "Increasing"
+    } else if (river_research_rank$Rank[river_research_rank$`Research Topics` == river_research_rank$`Research Topics`[i]][1]-
+          river_research_rank$Rank[river_research_rank$`Research Topics` == river_research_rank$`Research Topics`[i]][5] < -2){
+        river_research_rank$Trends[river_research_rank$`Research Topics` == river_research_rank$`Research Topics`[i]] <- "Decreasing"
+    } else if (river_research_rank$Rank[river_research_rank$`Research Topics` == river_research_rank$`Research Topics`[i]][3]-
+               river_research_rank$Rank[river_research_rank$`Research Topics` == river_research_rank$`Research Topics`[i]][6] > 2){
+        river_research_rank$Trends[river_research_rank$`Research Topics` == river_research_rank$`Research Topics`[i]] <- "Increasing"
+    } else if (river_research_rank$Rank[river_research_rank$`Research Topics` == river_research_rank$`Research Topics`[i]][3]-
+               river_research_rank$Rank[river_research_rank$`Research Topics` == river_research_rank$`Research Topics`[i]][6] < -2){
+        river_research_rank$Trends[river_research_rank$`Research Topics` == river_research_rank$`Research Topics`[i]] <- "Decreasing"
+    } else if (river_research_rank$Rank[river_research_rank$`Research Topics` == river_research_rank$`Research Topics`[i]][4]-
+               river_research_rank$Rank[river_research_rank$`Research Topics` == river_research_rank$`Research Topics`[i]][6] > 2){
+        river_research_rank$Trends[river_research_rank$`Research Topics` == river_research_rank$`Research Topics`[i]] <- "Increasing"
+    } else {
+        river_research_rank$Trends[river_research_rank$`Research Topics` == river_research_rank$`Research Topics`[i]] <- "Stable"
+    }
+}
+river_research_rank$Trends <- as.factor(river_research_rank$Trends)
+plot_rank <- ggplot(river_research_rank, aes(x = Period, y= Rank, group = `Research Topics`)) +
+    geom_point(aes(color = Trends, size = 1.01)) +
+    geom_line(aes(color = Trends, size = 1.005)) +
+    theme_bw() +
+    ylab("Total number of publications") +
+    facet_wrap(.~Trends, scales = "free_y") +
+    scale_y_reverse() +
+    scale_color_brewer(palette = "Dark2") +
+    theme(text=element_text(size=16),
+          strip.text.x = element_text(size=14),
+          axis.text = element_text(size=12),
+          axis.title = element_text(size=14),
+          legend.position = "none",
+          legend.title = element_blank(),
+          legend.text = element_text(size = 12))
+ggsave("research_rank_grouped.jpeg", plot_rank, units = 'cm', height = 20, width = 35, dpi = 300)
+
+
+plot_rank_group <- ggplot(river_research_rank, aes(x = Period, y= Rank, group = `Research Topics`)) +
+    geom_point(aes(color = `Research Topics`, size = 1.01)) +
+    geom_line(aes(color = `Research Topics`, size = 1.005)) +
+    theme_bw() +
+    ylab("Total number of publications") +
+    facet_wrap(.~Trends, scales = "free_y") +
+    scale_y_reverse() +
+    # scale_color_brewer(palette = "Dark2") +
+    theme(text=element_text(size=16),
+          strip.text.x = element_text(size=14),
+          axis.text = element_text(size=12),
+          axis.title = element_text(size=14),
+          legend.position = "bottom",
+          legend.title = element_blank(),
+          legend.text = element_text(size = 12))
+
+ggsave("research_rank_grouped_color.jpeg", plot_rank_group
+       ,  units = 'cm', height = 20, width = 35, dpi = 300)
+
+plot_rank_group + geom_text(data = river_research_rank[river_research_rank$Period == "2020", ], aes(label = `Research Topics`), hjust = 0.7,vjust = 2)
 # Top keywords ####
 
 KW_all <- function(x){
@@ -494,64 +779,3 @@ save_topjournal <- function(x){
 }
 
 ggsave(filename = "river_ml_journal.jpeg", save_topjournal(river_ml_short),  units = 'cm', height = 20, width = 40, dpi = 300)
-
-# Different ML types in different periods ####
-
-river_mlt_period <- river_ml_short %>% filter(Period != "2020") %>% group_by(Period, id, ML) %>% summarise(n =n())
-# river_mlt_period$Period <- as.character(river_mlt_period$Period)
-river_mlt_period <- aggregate(data = river_mlt_period, Period ~ id + ML, FUN = "summarise")
-river_mlt_period$ML <- as.factor(river_mlt_period$ML)
-river_mlt_period$ML <- factor(river_mlt_period$ML, levels = c("Supervised Learning", "Unsupervised Learning",
-                                                              "Deep Learning", "Reinforcement learning",
-                                                              "Human interpretable information extraction", "Big Data"),
-                              labels = c("Supervised Learning", "Unsupervised Learning",
-                                                               "Deep Learning", "Reinforcement Learning",
-                                                               "Human interpretable info extraction", "Big Data"))
-
-ggsave("river_mlt_periods.jpeg", ggplot(river_mlt_period, aes(x = Period, y= n, group = id)) +
-    geom_point(aes(color = id)) +
-    geom_line(aes(color = id)) +
-    theme_bw() +
-    ylab("Total number of publications") +
-    facet_wrap(.~ML, scales = "free_y") +
-    # scale_color_brewer(palette = "Dark2") +
-    theme(text=element_text(size=16),
-          strip.text.x = element_text(size=14),
-          axis.text = element_text(size=12),
-          axis.title = element_text(size=14),
-          legend.position = "bottom",
-          legend.title = element_blank(),
-          legend.text = element_text(size = 12)),  units = 'cm', height = 20, width = 30, dpi = 300)
-    
-ggsave("river_mlt_periods_grouped.jpeg", ggplot(river_mlt_period, aes(x = Period, y= n, group = id)) +
-           geom_point(aes(color = ML)) +
-           geom_line(aes(color = ML)) +
-           theme_bw() +
-           ylab("Total number of publications") +
-           facet_wrap(.~ML, scales = "free_y") +
-           scale_color_brewer(palette = "Dark2") +
-           theme(text=element_text(size=16),
-                 strip.text.x = element_text(size=14),
-                 axis.text = element_text(size=12),
-                 axis.title = element_text(size=14),
-                 legend.position = "bottom",
-                 legend.title = element_blank(),
-                 legend.text = element_text(size = 12)),  units = 'cm', height = 20, width = 30, dpi = 300)
-
-# Different research topics #### 
-
-# split the keyword_ml at the begining into different periods and apply the function in each period
-# categorize research to different research topics 
-
-river_ml_data %>% group_by(Period)
-
-kw_topic <- function(x){
-    
-}
-
-sum(keyword_ml$n[str_detect(tolower(keyword_ml$keyword), 
-           pattern ="'water quality'|wqi|pollut*|contaminat*|wastewater|acidifi*|treatment")])
-
-str_detect(str_to_lower(keyword_ml$keyword), 
-           pattern ="Quality|WQI|Pollut*|Contaminat*|Wastewater|Acidifi*|treatment")
-
