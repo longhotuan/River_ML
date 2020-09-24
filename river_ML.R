@@ -145,7 +145,7 @@ country_diff <- setdiff(levels(as.factor(unlist(river_ml_data$Country))), lat_lo
 #         }
 #     }
 # }
-# add the names of the country as columns ####
+#** add the names of the country as columns ####
 
 add_namecolumn <- function(x){
     if (nrow(x) == 0){
@@ -241,20 +241,317 @@ ml_type <- tribble(
     "Naive Bayes", "Supervised Learning",
     "Neural network", "Unsupervised Learning",
     "Neural networks", "Supervised Learning",
-    "Reinforcement_learning", "Reinforcement learning",
+    "Reinforcement_learning", "Reinforcement Learning",
     "SGD", "Supervised Learning",
     "SVM", "Supervised Learning"
 )
 
 river_ml_data <- left_join(river_ml_data,  ml_type, by = ".id")
 river_ml_data<- river_ml_data %>% select(ML, everything())
+colnames(river_ml_data)[2] <- "id"
+# before 1980s, 1980s, 1990s, 2000s, 2010s 
+
+river_ml_data$Period <- NA
+river_ml_data$Period[river_ml_data$Year < 1980] <- "< 1980s"
+river_ml_data$Period[between(river_ml_data$Year, lower = 1980, upper = 1989)] <- "1980s"
+river_ml_data$Period[between(river_ml_data$Year, lower = 1990, upper = 1999)] <- "1990s"
+river_ml_data$Period[between(river_ml_data$Year, lower = 2000, upper = 2009)] <- "2000s"
+river_ml_data$Period[between(river_ml_data$Year, lower = 2010, upper = 2019)] <- "2010s"
+river_ml_data$Period[between(river_ml_data$Year, lower = 2020, upper = 2021)] <- "2020"
+river_ml_data$Period <- as.factor(river_ml_data$Period)
+river_ml_data$Period <- relevel(river_ml_data$Period, "< 1980s")
 
 river_ml_data_final <- river_ml_data %>% select(-Affi, -Country)
+river_ml_short <- river_ml_data[,c(1:19, 515)]
+
 write_csv(river_ml_data_final, "river_ml_data.csv")
 write_feather(river_ml_data_final, "river_ml_data.feather")
+rm(ml_type, river_ml_data_country, river_ml_data_lat, river_ml_data_long, list_river_mlvised)
+
+# Top keywords ####
+
+KW_all <- function(x){
+    if (nrow(x) == 0){
+        return(x)
+    } else {
+        keyword <- strsplit(x$`Author Keywords`, "; ")
+        for (i in 1:length(keyword)){
+            keyword[i] <- as.data.frame(matrix(as.data.frame(keyword[i])))
+        }
+        keyword2 <- rbindlist(keyword)
+        colnames(keyword2)[1]<- "keyword"
+        keyword2<- keyword2[complete.cases(keyword2),]
+        keyword2$keyword <- str_to_title(keyword2$keyword)
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'modeling', "modelling")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Lakes', "Lake")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Reservoirs', "Reservoir")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Ponds', "Pond")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Rivers', "River")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Wetlands', "Wetland")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Floods', "Flood")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Dams', "Dam")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Nutrients', "Nutrient")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Modelling', "Modeling")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Models', "Model")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Metals', "Metal")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Diatoms', "Diatom")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Macrophytes', "Macrophyte")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Sediments', "Sediment")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Levels', "Level")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Gases', "Gas")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Hiv', "Waterborne Disease")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Co2', "CO2")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Ch4', "CH4")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'N2o', "N2O")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'CO2', "Carbon Dioxide")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'CH4', "Methane")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'N2O', "Nitrous Oxide")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, '16s Rrna Gene', "16s Rrna")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'E. Coli', "Escherichia Coli")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Viruses', "Virus")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Zoonoses', "Zoonosis")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Genes', "Gene")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Mrsa', "MRSA")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Esbl', "ESBL")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Taphonomy', "Water Quality")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Microcystins', "Microcystin")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Fishery', "Fisheries")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'algorithms', "algorithm")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Machines', "Machine")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'machines', "machine")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Algorithms', "algorithm")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'methods', "method")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Methods', "method")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'rules', "rule")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Rules', "rule")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Networks', "Network")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Systems', "System")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Pca', "Principal Component Analysis")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'PCA', "Principal Component Analysis")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Principal Components Analysis (Pca)', "Principal Component Analysis")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Principal Component', "Principal Component Analysis")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Principal Components', "Principal Component Analysis")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Principal Components Analysis (Pca)', "Principal Component Analysis")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Principal Component Analysis Method', "Principal Component Analysis")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Analyses', "Analysis")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Cca', "Canonical Correspondence Analysis")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'CCA', "Canonical Correspondence Analysis")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Redundancy Analysis (Rda)', "Redundancy Analysis")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Neural Network', "Artificial Neural Network")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Artificial Neural Network \\(Ann\\)', "Artificial Neural Network")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Artificial Neural Networks \\(Ann\\)', "Artificial Neural Network")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Artificial Neural Networks \\(Anns\\)', "Artificial Neural Network")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Ann', "Artificial Neural Network")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'ANN', "Artificial Neural Network")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'ANNs', "Artificial Neural Network")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Anns', "Artificial Neural Network")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'ANN', "Artificial Neural Network")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Artificial Artificial Neural Network', "Artificial Neural Network")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Gis', "Geographic Information System")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'GIS', "Geographic Information System")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Geographic Information System \\(Gis\\)', "Geographic Information System")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Gis \\(Geographic Information System\\)', "Geographic Information System")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Analysis Analysis', "Analysis")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Svm', "Support Vector Machine")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Support Vector Machine \\(Svm\\)', "Support Vector Machine")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Support Vector Machines \\(Svms\\)', "Support Vector Machine")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Support Vector Machines \\(Svm\\)', "Support Vector Machine")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Support Vector Machine\\(Svm\\)', "Support Vector Machine")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Generalized', "Generalised")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Artificial Neural Network \\(Artificial Neural Network\\)', "Artificial Neural Network")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Support Vector Machine \\(Support Vector Machine\\)', "Support Vector Machine")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Principal Component Analysiss Analysis', "Principal Component Analysis")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Principal Component Analysis \\(Principal Component Analysis\\)', "Principal Component Analysis")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Forest \\(Rf\\)', "Forest")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'forests', "Forest")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'forest', "Forest")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Forests', "Forest")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Ground water', "Groundwater")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Estuaries', "Estuary")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Macroinvertebrates', "Macroinvertebrate")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Gam', "Generalised Additive Model")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, 'Generalised Additive Model \\(Gam\\)', "Generalised Additive Model")
+        keyword2$keyword <- str_replace_all(keyword2$keyword, ' Generalised Additive Model \\(Gams\\)', "Generalised Additive Model")
+        keyword3 <- keyword2 %>%
+            dplyr::group_by(keyword) %>% 
+            dplyr::summarise(n=n()) %>% 
+            dplyr::arrange(desc(n)) 
+        return(keyword3)
+    }
+}
+
+keyword_ml <- KW_all(river_ml_data_final)
 
 
-# Split into different periods ####
-# before 1980s, 1980s, 1990s, 2000s, 2010s ####
+# print the graphs
 
+plot_kw <- function(x, y){
+    if (nrow(x) == 0){
+        return(x)
+    } else {
+        ggplot(x, aes(label = keyword, size =n ,color = rainbow_hcl(20))) +
+            geom_text_wordcloud_area(shape = "star") +
+            scale_size_area(max_size = 15) +
+            theme_minimal()+
+            ggtitle(paste(y))+
+            theme(plot.title = element_text(hjust = 0.5, size = 18))
+    }
+}
+
+plot_kw(keyword_ml[1:20,], "River Machine Learning")
+
+# General info ####
+# document types
+save_DT <- function(x){
+    y <- summary(x$`Document Type`)
+    y <- rownames_to_column(as.data.frame(y), var = "rowname")
+    z <- as.data.frame(y$y*100/sum(y$y))
+    colnames(z) <- "Percentage"
+    y <- bind_cols(y,z)
+    return(y)
+}
+
+write_csv(save_DT(river_ml_short), "river_ml_DT.csv")
+
+# language of the document 
+save_language <- function(x){
+    y <- summary(as.factor(x$`Language of Original Document`))
+    y <- rownames_to_column(as.data.frame(y), var = "rowname")
+    z <- as.data.frame(y$y*100/sum(y$y))
+    colnames(z) <- "Percentage"
+    y <- bind_cols(y,z)
+}
+write_csv(save_language(river_ml_short), "river_ml_lang.csv")
+
+# Open access
+save_access <- function(x){
+    y <- summary(as.factor(x$`Access Type`))
+    y <- rownames_to_column(as.data.frame(y), var = "rowname")
+    z <- as.data.frame(y$y*100/sum(y$y))
+    colnames(z) <- "Percentage"
+    y <- bind_cols(y,z)
+}
+
+write_csv(save_access(river_ml_short), "river_ml_Access.csv")
+
+# Citation
+save_citation <- function(x, y){
+    x <- x %>% 
+        arrange(desc(`Cited by`)) %>% 
+        slice(1:y)
+}
+
+write_csv(save_citation(river_ml_data_final, 100), "river_ml_citation.csv")
+
+# total_citation <- function(x, z){
+#     y <- sum(x$`Cited by`, na.rm = TRUE)
+#     t <- data.frame(z, y)
+#     colnames(t) <- c("SDG", "Citation")
+#     return(t)
+# }
+
+# Publication years
+save_pubyear <- function(x){
+    y <- x %>% select(Year,`Document Type`, `Access Type`) %>% 
+        dplyr::group_by(Year) %>% 
+        dplyr::summarise(n=n()) %>% 
+        dplyr::arrange(Year) %>% 
+        dplyr::filter(Year < 2021)
+    # z <- as.data.frame(ave(y$n, FUN = cumsum))
+    # colnames(z) <- "cum"
+    # y <- bind_cols(y, z)
+    t <- ggplot(y, aes(x=Year, y=n))+
+        geom_point(size = 2) +
+        # geom_smooth(colour="gray20", size =0.5, method = "lm") +
+        labs(x = "Years", y = "Cumulative publications", fill = NULL, title = NULL) +
+        # scale_x_continuous(breaks = c(2008:2020))+
+        theme_bw()+
+        theme(text = element_text(size = 16))
+}
+
+ggsave(filename = "river_ml_pubyear.jpeg", save_pubyear(river_ml_short),  units = 'cm', height = 20, width = 20, dpi = 300)
+
+# Top Journal 
+save_topjournal <- function(x){
+    y <- x %>% select(`Source title`) %>% 
+        dplyr::group_by(`Source title`) %>% 
+        dplyr::summarise(n=n()) %>% 
+        dplyr::arrange(desc(n)) %>% 
+        slice(1:20) %>% 
+        ggplot(aes(x=reorder(`Source title`, n),y = n)) +
+        geom_bar(stat = "identity",
+                 position = position_stack(reverse = TRUE), 
+                 fill = "tomato") +
+        coord_flip() +
+        theme_bw() +
+        xlab("Journals") +
+        ylab("Number of publications") +
+        theme(text=element_text(family = "Arial")) +
+        theme(axis.text.x = element_text(size = 14)) +
+        theme(axis.text.y = element_text(size = 14)) +
+        theme(axis.title = element_text(size = 14)) +
+        theme(axis.title.y = element_blank())
+}
+
+ggsave(filename = "river_ml_journal.jpeg", save_topjournal(river_ml_short),  units = 'cm', height = 20, width = 40, dpi = 300)
+
+# Different ML types in different periods ####
+
+river_mlt_period <- river_ml_short %>% filter(Period != "2020") %>% group_by(Period, id, ML) %>% summarise(n =n())
+# river_mlt_period$Period <- as.character(river_mlt_period$Period)
+river_mlt_period <- aggregate(data = river_mlt_period, Period ~ id + ML, FUN = "summarise")
+river_mlt_period$ML <- as.factor(river_mlt_period$ML)
+river_mlt_period$ML <- factor(river_mlt_period$ML, levels = c("Supervised Learning", "Unsupervised Learning",
+                                                              "Deep Learning", "Reinforcement learning",
+                                                              "Human interpretable information extraction", "Big Data"),
+                              labels = c("Supervised Learning", "Unsupervised Learning",
+                                                               "Deep Learning", "Reinforcement Learning",
+                                                               "Human interpretable info extraction", "Big Data"))
+
+ggsave("river_mlt_periods.jpeg", ggplot(river_mlt_period, aes(x = Period, y= n, group = id)) +
+    geom_point(aes(color = id)) +
+    geom_line(aes(color = id)) +
+    theme_bw() +
+    ylab("Total number of publications") +
+    facet_wrap(.~ML, scales = "free_y") +
+    # scale_color_brewer(palette = "Dark2") +
+    theme(text=element_text(size=16),
+          strip.text.x = element_text(size=14),
+          axis.text = element_text(size=12),
+          axis.title = element_text(size=14),
+          legend.position = "bottom",
+          legend.title = element_blank(),
+          legend.text = element_text(size = 12)),  units = 'cm', height = 20, width = 30, dpi = 300)
+    
+ggsave("river_mlt_periods_grouped.jpeg", ggplot(river_mlt_period, aes(x = Period, y= n, group = id)) +
+           geom_point(aes(color = ML)) +
+           geom_line(aes(color = ML)) +
+           theme_bw() +
+           ylab("Total number of publications") +
+           facet_wrap(.~ML, scales = "free_y") +
+           scale_color_brewer(palette = "Dark2") +
+           theme(text=element_text(size=16),
+                 strip.text.x = element_text(size=14),
+                 axis.text = element_text(size=12),
+                 axis.title = element_text(size=14),
+                 legend.position = "bottom",
+                 legend.title = element_blank(),
+                 legend.text = element_text(size = 12)),  units = 'cm', height = 20, width = 30, dpi = 300)
+
+# Different research topics #### 
+
+# split the keyword_ml at the begining into different periods and apply the function in each period
+# categorize research to different research topics 
+
+river_ml_data %>% group_by(Period)
+
+kw_topic <- function(x){
+    
+}
+
+sum(keyword_ml$n[str_detect(tolower(keyword_ml$keyword), 
+           pattern ="'water quality'|wqi|pollut*|contaminat*|wastewater|acidifi*|treatment")])
+
+str_detect(str_to_lower(keyword_ml$keyword), 
+           pattern ="Quality|WQI|Pollut*|Contaminat*|Wastewater|Acidifi*|treatment")
 
