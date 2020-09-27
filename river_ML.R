@@ -38,6 +38,8 @@ library(rworldmap)
 library(countrycode)
 library(usethis)
 library(pastecs)
+library(officer) # make editable map
+library(rvg) # make editable map
 
 # Import datasets  ####
 
@@ -392,7 +394,7 @@ river_research$ML <- factor(river_research$ML, levels = c("Supervised Learning",
                                          "Human interpretable info extraction", "Big Data"))
 river_research$id <- as.factor(river_research$id)
 
-research_total <- as_tibble(lapply(river_research, function(x){sum(!is.na(x))}))
+research_total <- as_tibble(lapply(river_research[,4:ncol(river_research)], sum))
 
 # Over period and id
 river_research_ML_id <- aggregate(data = river_research, .~Period+id+ML, sum) 
@@ -459,16 +461,7 @@ ggsave("research_period.jpeg", ggplot(river_research_period %>% filter(Period !=
        ,  units = 'cm', height = 20, width = 30, dpi = 300)
 
 
-# split the keyword_ml at the begining into different periods and apply the function in each period (forget what is this for?)
-river_period <- split(river_ml_data, f = river_ml_data$Period)
-
-keyword_period <- map(river_period, KW_all)
-
-sum(keyword_ml$n[str_detect(tolower(keyword_ml$keyword), 
-                            pattern = "climate change*|global warming|
-                                          climate warming*|kyoto protocol|paris agreement|palaeoclimat*|climate polic*")])
-
-# Temporal trends of research rank ####
+#** Temporal trends of research rank-GOOD ####
 
 river_research_rank <- river_research_period %>% arrange(Period, -`Number of publications`) %>% group_by(Period) %>% mutate(Rank = rank(desc(`Number of publications`), ties.method = "min"))
 
@@ -515,6 +508,9 @@ for (i in seq_len(nlevels(as.factor(river_research_rank$`Research Topics`)))){
     }
 }
 river_research_rank$Trends <- as.factor(river_research_rank$Trends)
+river_research_rank$Trends <- relevel(river_research_rank$Trends, "Increasing")
+
+river_research_rank$`Research Topics` <- as.factor(river_research_rank$`Research Topics`)
 plot_rank <- ggplot(river_research_rank, aes(x = Period, y= Rank, group = `Research Topics`)) +
     geom_point(aes(color = Trends, size = 1.01)) +
     geom_line(aes(color = Trends, size = 1.005)) +
@@ -527,18 +523,73 @@ plot_rank <- ggplot(river_research_rank, aes(x = Period, y= Rank, group = `Resea
           strip.text.x = element_text(size=14),
           axis.text = element_text(size=12),
           axis.title = element_text(size=14),
-          legend.position = "none",
+          legend.position = c(0.8, 0.2),
           legend.title = element_blank(),
           legend.text = element_text(size = 12))
-ggsave("research_rank_grouped.jpeg", plot_rank, units = 'cm', height = 20, width = 35, dpi = 300)
 
+ggsave("research_rank_grouped.jpeg", plot_rank,  units = 'cm', height = 20, width = 35, dpi = 300)
+
+rank_research <- tibble(`Research Topics` = levels(river_research_rank$`Research Topics`), nlevels = seq_len(nlevels(river_research_rank$`Research Topics`)))
+
+river_research_rank <- left_join(river_research_rank, rank_research, by = "Research Topics")
 
 plot_rank_group <- ggplot(river_research_rank, aes(x = Period, y= Rank, group = `Research Topics`)) +
-    geom_point(aes(color = `Research Topics`, size = 1.01)) +
-    geom_line(aes(color = `Research Topics`, size = 1.005)) +
+    geom_point(aes(color = Trends, size = 1.01)) +
+    geom_line(aes(color = Trends, size = 1.005)) +
+    theme_bw() +
+    ylab("Rank") +
+    facet_wrap(.~Trends, ncol = 2) +
+    scale_y_reverse() +
+    scale_color_brewer(palette = "Reds", direction=-1) +
+    theme(text=element_text(size=18),
+          strip.text.x = element_text(size=16),
+          axis.text = element_text(size=14),
+          axis.title = element_text(size=16),
+          legend.position = "none",
+          legend.title = element_blank(),
+          legend.text = element_text(size = 14))+ 
+    geom_text(data = river_research_rank[river_research_rank$Period == "2020", ], 
+              aes(label = river_research_rank$Rank[river_research_rank$Period == "2020"]),
+                            hjust = -1.05 ,vjust = 0.5, size = 6) 
+plot_rank_group
+ggsave("research_rank_grouped_color.jpeg", plot_rank_group
+       ,  units = 'cm', height = 40, width = 30, dpi = 300)
+
+# good graph 
+plot_rank_group_editable <- dml(ggobj = plot_rank_group)
+plot_rank_group_doc <- read_pptx()
+plot_rank_group_doc <- add_slide(plot_rank_group_doc)
+plot_rank_group_doc <- ph_with(x = plot_rank_group_doc, value = plot_rank_group_editable, location = ph_location_type(type = "body"))
+print(plot_rank_group_doc, target = "research_rank_grouped.pptx")
+
+# Rank variability over years ####
+
+river_rank_year <- river_ml_short[,c(1,2, str_which(colnames(river_ml_short), "Year"), (str_which(colnames(river_ml_short), "Period")+1):ncol(river_ml_short))]
+river_rank_year$ML <- as.factor(river_rank_year$ML)
+river_rank_year$ML <- factor(river_rank_year$ML, levels = c("Supervised Learning", "Unsupervised Learning",
+                                                          "Deep Learning", "Reinforcement learning",
+                                                          "Human interpretable information extraction", "Big Data"),
+                            labels = c("Supervised Learning", "Unsupervised Learning",
+                                       "Deep Learning", "Reinforcement Learning",
+                                       "Human interpretable info extraction", "Big Data"))
+river_rank_year$id <- as.factor(river_rank_year$id)
+rank_year_total <- as_tibble(lapply(river_rank_year[,4:ncol(river_rank_year)], sum))
+
+river_research_year <- river_rank_year %>% select(-id, - ML) 
+river_research_year <- aggregate(data = river_research_year, .~Year, sum)
+river_research_year <- river_research_year %>% filter(Year != "2021") %>% 
+    pivot_longer(cols = -c(Year), names_to = "Research Topics", values_to = "Number of publications")
+
+river_trend_year <- river_research_year %>% 
+    arrange(Year, -`Number of publications`) %>%
+    group_by(Year) %>% mutate(Rank = rank(desc(`Number of publications`), ties.method = "min"))
+# see the trends
+ggplot(river_trend_year %>% filter(Year > 1979), aes(x = Year, y= Rank, group = `Research Topics`)) +
+    geom_point() +
+    geom_line() +
     theme_bw() +
     ylab("Total number of publications") +
-    facet_wrap(.~Trends, scales = "free_y") +
+    facet_wrap(.~`Research Topics`, scales = "free_y") +
     scale_y_reverse() +
     # scale_color_brewer(palette = "Dark2") +
     theme(text=element_text(size=16),
@@ -549,11 +600,36 @@ plot_rank_group <- ggplot(river_research_rank, aes(x = Period, y= Rank, group = 
           legend.title = element_blank(),
           legend.text = element_text(size = 12))
 
-ggsave("research_rank_grouped_color.jpeg", plot_rank_group
-       ,  units = 'cm', height = 20, width = 35, dpi = 300)
+# making point + error bar
 
-plot_rank_group + geom_text(data = river_research_rank[river_research_rank$Period == "2020", ], aes(label = `Research Topics`), hjust = 0.7,vjust = 2)
-# Top keywords ####
+# make a new tibble 
+
+river_trend_point_err <- list(aggregate(data = river_trend_year[river_trend_year$Year > 1979,], Rank ~ `Research Topics`, FUN = mean),
+                               aggregate(data = river_trend_year[river_trend_year$Year > 1979,], Rank ~ `Research Topics`, FUN = min),
+                               aggregate(data = river_trend_year[river_trend_year$Year > 1979,], Rank ~ `Research Topics`, FUN = max)) %>% 
+    reduce(full_join, by = "Research Topics")
+
+colnames(river_trend_point_err)[2:4] <- c("Mean rank", "Min rank", "Max rank")
+
+ggplot(river_trend_point_err, aes(x = `Research Topics`, y =`Mean rank`)) +
+    geom_point() + 
+    geom_errorbar(aes(ymin=`Min rank`, ymax=`Max rank`), width=.2,
+                  position=position_dodge(0.05))
+
+
+# steps: reserve axis. make them minus --> color based on gradient --> put the number in the end of the error bar --> PERFECT 
+
+# Temporal trends of modelling techniques ####
+
+
+
+
+
+# World map #### 
+
+
+
+ # Top keywords ####
 
 KW_all <- function(x){
     if (nrow(x) == 0){
