@@ -96,7 +96,7 @@ lat_long <- bind_rows(lat_long, data.frame(x = 16.2650, y = 61.5510, Country = '
 lat_long <- bind_rows(lat_long, data.frame(x = -112.461671, y = 45.679552, Country = 'United States'))
 lat_long <- bind_rows(lat_long, data.frame(x = -112.461671, y = 45.679552, Country = 'USA'))
 country_diff <- setdiff(levels(as.factor(unlist(river_ml_data$Country))), lat_long$Country)
-#** country correction ####
+#** country correction (NOT USE) ####
 # country_correct <- c("Croatia", "United States of America", "Croatia", "Croatia", "Croatia",
 #                      "United States of America", "Australia", "Russia", "Japan", "Japan",
 #                      "United States of America", "Belgium", "China", "Canada", "United States of America", 
@@ -131,7 +131,7 @@ country_diff <- setdiff(levels(as.factor(unlist(river_ml_data$Country))), lat_lo
 # 
 # country_list <- tibble(`Country_wrong` = country_diff, `Country` =country_correct)
 
-#** lat_long ####
+#** lat_long (NOT USE) ####
 # lat_long2 <- left_join(country_list, lat_long, by = "Country")
 # lat_long2 <- lat_long2 %>% select(-Country)
 # colnames(lat_long2)[1] <- "Country"
@@ -270,7 +270,9 @@ river_ml_data$Period <- relevel(river_ml_data$Period, "< 1980s")
 
 topic_list <- c("Water Quality/Pollution", "Heavy Metal", "Climate Change", "Land use change", "Sediment", "Eutrophication", "Groundwater",
                 "Hydrology", "Estuaries", "Hydropower and dams", "Biodiversity", "Antibiotic resistance", "Drinking water", "Fisheries", 
-                "Management", "Aquatic environment", "Biogeochemistry", "Public health", "Movement", "Spatiotempral trends", "Microbial")
+                "Management", "Aquatic environment", "Biogeochemistry", "Public health", "Movement", "Spatiotemporal trends", "Microbial")
+
+
 river_ml_data[, topic_list] <- NA
 
 river_ml_data$`Water Quality/Pollution`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), 
@@ -327,7 +329,7 @@ river_ml_data$`Public health`[str_detect(str_to_lower(river_ml_data$`Author Keyw
                                          public health|health risk*|health care|physical health|mental|maternal|child*")] <- 1
 
 river_ml_data$Movement[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern ="move*|migrat")] <- 1
-river_ml_data$`Spatiotempral trends`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "temporal*|season*|spati*")] <- 1
+river_ml_data$`Spatiotemporal trends`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "temporal*|season*|spati*")] <- 1
 river_ml_data$Microbial[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "microbi|16s rdna|fluorescence")] <- 1
 
 
@@ -338,52 +340,7 @@ write_csv(river_ml_data_final, "river_ml_data.csv")
 write_feather(river_ml_data_final, "river_ml_data.feather")
 rm(ml_type, river_ml_data_country, river_ml_data_lat, river_ml_data_long, list_river_mlvised)
 
-#  ML types in different periods ####
-
-river_mlt_period <- river_ml_short %>% filter(Period != "2020") %>% group_by(Period, id, ML) %>% summarise(n =n())
-river_mlt_period$Period <- as.character(river_mlt_period$Period)
-# river_mlt_period <- aggregate(data = river_mlt_period, Period ~ id + ML, FUN = "summarise")
-river_mlt_period$ML <- as.factor(river_mlt_period$ML)
-river_mlt_period$ML <- factor(river_mlt_period$ML, levels = c("Supervised Learning", "Unsupervised Learning",
-                                                              "Deep Learning", "Reinforcement learning",
-                                                              "Human interpretable information extraction", "Big Data"),
-                              labels = c("Supervised Learning", "Unsupervised Learning",
-                                                               "Deep Learning", "Reinforcement Learning",
-                                                               "Human interpretable info extraction", "Big Data"))
-
-ggsave("river_mlt_periods.jpeg", ggplot(river_mlt_period, aes(x = Period, y= n, group = id)) +
-    geom_point(aes(color = id)) +
-    geom_line(aes(color = id)) +
-    theme_bw() +
-    ylab("Total number of publications") +
-    facet_wrap(.~ML, scales = "free_y") +
-    # scale_color_brewer(palette = "Dark2") +
-    theme(text=element_text(size=16),
-          strip.text.x = element_text(size=14),
-          axis.text = element_text(size=12),
-          axis.title = element_text(size=14),
-          legend.position = "bottom",
-          legend.title = element_blank(),
-          legend.text = element_text(size = 12))
-    ,  units = 'cm', height = 20, width = 30, dpi = 300)
-    
-ggsave("river_mlt_periods_grouped.jpeg", ggplot(river_mlt_period, aes(x = Period, y= n, group = id)) +
-           geom_point(aes(color = ML)) +
-           geom_line(aes(color = ML)) +
-           theme_bw() +
-           ylab("Total number of publications") +
-           facet_wrap(.~ML, scales = "free_y") +
-           scale_color_brewer(palette = "Dark2") +
-           theme(text=element_text(size=16),
-                 strip.text.x = element_text(size=14),
-                 axis.text = element_text(size=12),
-                 axis.title = element_text(size=14),
-                 legend.position = "bottom",
-                 legend.title = element_blank(),
-                 legend.text = element_text(size = 12))
-       ,  units = 'cm', height = 20, width = 30, dpi = 300)
-
-# Different research topics #### 
+# Temporal trends of research topics #### 
 
 river_research <- river_ml_short[,c(1,2,str_which(colnames(river_ml_short), "Period"):ncol(river_ml_short))]
 river_research[is.na(river_research)] <- 0
@@ -399,6 +356,7 @@ river_research$id <- as.factor(river_research$id)
 research_total <- as_tibble(lapply(river_research[,4:ncol(river_research)], sum))
 
 # Over period and id
+
 river_research_ML_id <- aggregate(data = river_research, .~Period+id+ML, sum) 
 river_research_ML_id <- river_research_ML_id %>% pivot_longer(cols = -c(Period, id, ML), names_to = "Research Topics", values_to = "Number of publications")
 
@@ -463,9 +421,13 @@ ggsave("research_period.jpeg", ggplot(river_research_period %>% filter(Period !=
        ,  units = 'cm', height = 20, width = 30, dpi = 300)
 
 
-#** Temporal trends of research rank-GOOD ####
+#** Temporal trends of research rank (GOOD) ####
 
-river_research_rank <- river_research_period %>% arrange(Period, -`Number of publications`) %>% group_by(Period) %>% mutate(Rank = rank(desc(`Number of publications`), ties.method = "min"))
+# make rank
+river_research_rank <- river_research_period %>% 
+    arrange(Period, -`Number of publications`) %>% 
+    group_by(Period) %>% 
+    mutate(Rank = rank(desc(`Number of publications`), ties.method = "min"))
 
 ggsave("research_rank.jpeg", ggplot(river_research_rank %>% filter(Period != "< 1980s"), aes(x = Period, y= Rank, group = `Research Topics`)) +
            geom_point() +
@@ -513,7 +475,7 @@ river_research_rank$Trends <- as.factor(river_research_rank$Trends)
 river_research_rank$Trends <- relevel(river_research_rank$Trends, "Increasing")
 
 river_research_rank$`Research Topics` <- as.factor(river_research_rank$`Research Topics`)
-plot_rank <- ggplot(river_research_rank, aes(x = Period, y= Rank, group = `Research Topics`)) +
+plot_rank <- ggplot(river_research_rank, aes(x = Period, y= Rank, group = `Research Topics`)) + # not so good 
     geom_point(aes(color = Trends, size = 1.01)) +
     geom_line(aes(color = Trends, size = 1.005)) +
     theme_bw() +
@@ -528,7 +490,7 @@ plot_rank <- ggplot(river_research_rank, aes(x = Period, y= Rank, group = `Resea
           legend.position = c(0.8, 0.2),
           legend.title = element_blank(),
           legend.text = element_text(size = 12))
-
+plot_rank
 ggsave("research_rank_grouped.jpeg", plot_rank,  units = 'cm', height = 20, width = 35, dpi = 300)
 
 rank_research <- tibble(`Research Topics` = levels(river_research_rank$`Research Topics`), nlevels = seq_len(nlevels(river_research_rank$`Research Topics`)))
@@ -537,7 +499,7 @@ river_research_rank <- left_join(river_research_rank, rank_research, by = "Resea
 
 cols <- c("Increasing" = "red", "Decreasing" = "blue", "Stable" = "violet")
 
-plot_rank_group <- ggplot(river_research_rank, aes(x = Period, y= Rank, group = `Research Topics`)) +
+plot_rank_group <- ggplot(river_research_rank, aes(x = Period, y= Rank, group = `Research Topics`)) + # Good graph 
     geom_point(aes(color = Trends, size = 1.01)) +
     geom_line(aes(color = Trends, size = 1.005, alpha = 0.8)) +
     theme_bw() +
@@ -560,14 +522,13 @@ plot_rank_group
 ggsave("research_rank_grouped_color.jpeg", plot_rank_group
        ,  units = 'cm', height = 40, width = 30, dpi = 300)
 
-# good graph 
 plot_rank_group_editable <- dml(ggobj = plot_rank_group)
 plot_rank_group_doc <- read_pptx()
 plot_rank_group_doc <- add_slide(plot_rank_group_doc)
 plot_rank_group_doc <- ph_with(x = plot_rank_group_doc, value = plot_rank_group_editable, location = ph_location_type(type = "body"))
 print(plot_rank_group_doc, target = "research_rank_grouped.pptx")
 
-# Rank variability over decades (Best so far)
+#** Rank variability over decades (BEST SO FAR) ####
 
 river_trend_decade_err <- list(aggregate(data = river_research_rank, Rank ~ `Research Topics`, FUN = mean),
                               aggregate(data = river_research_rank, Rank ~ `Research Topics`, FUN = min),
@@ -576,7 +537,7 @@ river_trend_decade_err <- list(aggregate(data = river_research_rank, Rank ~ `Res
 
 colnames(river_trend_decade_err)[2:4] <- c("Mean rank", "Min rank", "Max rank")
 
-cc <- seq_gradient_pal("blue", "red", "Lab")(seq(0,1,length.out=21))
+cc <- seq_gradient_pal("blue", "red", "Lab")(seq(0, 1, length.out=21))
 
 # reorder research topic order based on mean rank
 
@@ -603,7 +564,7 @@ plot_rank_decade <- ggplot(river_trend_decade_err, aes(y = `Research Topics`, x 
               vjust = 0.25, size = 5) +
     # geom_vline(xintercept = 10,  
     #            color = "purple", size=0.5)+
-    xlab("Rank")+
+    xlab("Rank of Research Topics")+
     theme(text=element_text(size=14),
           # axis.line.x = element_line(size = 1),
           axis.ticks.x = element_line(size = 1),
@@ -618,9 +579,8 @@ plot_rank_decade <- ggplot(river_trend_decade_err, aes(y = `Research Topics`, x 
 
 plot_rank_decade
 
-ggsave("rank_decade.jpeg", plot_rank_decade,  units = 'cm', height = 20, width = 20, dpi = 300)
+ggsave("research_rank_decade.jpeg", plot_rank_decade,  units = 'cm', height = 20, width = 20, dpi = 300)
 
-# good graph 
 plot_rank_decade_editable <- dml(ggobj = plot_rank_decade)
 plot_rank_decade_doc <- read_pptx()
 plot_rank_decade_doc <- add_slide(plot_rank_decade_doc)
@@ -628,7 +588,7 @@ plot_rank_decade_doc <- ph_with(x = plot_rank_decade_doc, value = plot_rank_deca
 print(plot_rank_decade_doc, target = "research_rank_decade.pptx")
 
 
-# Rank variability over years ####
+#** Rank variability over years (NOT SO GOOD)####
 
 river_rank_year <- river_ml_short[,c(1,2, str_which(colnames(river_ml_short), "Year"), (str_which(colnames(river_ml_short), "Period")+1):ncol(river_ml_short))]
 river_rank_year$ML <- as.factor(river_rank_year$ML)
@@ -650,6 +610,7 @@ river_research_year <- river_research_year %>% filter(Year != "2021") %>%
 river_trend_year <- river_research_year %>% 
     arrange(Year, -`Number of publications`) %>%
     group_by(Year) %>% mutate(Rank = rank(desc(`Number of publications`), ties.method = "min"))
+
 river_trend_year$`Research Topics` <- as.factor(river_trend_year$`Research Topics`)
 # see the trends
 ggplot(river_trend_year %>% filter(Year > 1979), aes(x = Year, y= Rank, group = `Research Topics`)) +
@@ -707,19 +668,189 @@ plot_rank_year <- ggplot(river_trend_point_err, aes(y = `Research Topics`, x =`M
 plot_rank_year
 ggsave("rank_year.jpeg", plot_rank_year,  units = 'cm', height = 20, width = 30, dpi = 300)
 
-
-
 # Temporal trends of modelling techniques ####
+#**  ML types in different periods (NOT SO GOOD)####
+
+river_mlt_period <- river_ml_short %>% filter(Period != "2020") %>% group_by(Period, id, ML) %>% summarise(n =n())
+river_mlt_period$Period <- as.character(river_mlt_period$Period)
+river_mlt_period$ML <- as.factor(river_mlt_period$ML)
+river_mlt_period$ML <- factor(river_mlt_period$ML, levels = c("Supervised Learning", "Unsupervised Learning",
+                                                              "Deep Learning", "Reinforcement learning",
+                                                              "Human interpretable information extraction", "Big Data"),
+                              labels = c("Supervised Learning", "Unsupervised Learning",
+                                         "Deep Learning", "Reinforcement Learning",
+                                         "Human interpretable info extraction", "Big Data"))
+
+ggsave("river_mlt_periods.jpeg", ggplot(river_mlt_period, aes(x = Period, y= n, group = id)) +
+           geom_point(aes(color = id)) +
+           geom_line(aes(color = id)) +
+           theme_bw() +
+           ylab("Total number of publications") +
+           facet_wrap(.~ML, scales = "free_y") +
+           # scale_color_brewer(palette = "Dark2") +
+           theme(text=element_text(size=16),
+                 strip.text.x = element_text(size=14),
+                 axis.text = element_text(size=12),
+                 axis.title = element_text(size=14),
+                 legend.position = "bottom",
+                 legend.title = element_blank(),
+                 legend.text = element_text(size = 12))
+       ,  units = 'cm', height = 20, width = 30, dpi = 300)
+
+ggsave("river_mlt_periods_grouped.jpeg", ggplot(river_mlt_period, aes(x = Period, y= n, group = id)) +
+           geom_point(aes(color = ML)) +
+           geom_line(aes(color = ML)) +
+           theme_bw() +
+           ylab("Total number of publications") +
+           facet_wrap(.~ML, scales = "free_y") +
+           scale_color_brewer(palette = "Dark2") +
+           theme(text=element_text(size=16),
+                 strip.text.x = element_text(size=14),
+                 axis.text = element_text(size=12),
+                 axis.title = element_text(size=14),
+                 legend.position = "bottom",
+                 legend.title = element_blank(),
+                 legend.text = element_text(size = 12))
+       ,  units = 'cm', height = 20, width = 30, dpi = 300)
+
+#** ML ranks in different years (GOOD) ####
+
+ml_topics <- river_ml_short %>% group_by(id, Year, ML) %>% summarise(n=n())
+ml_topics$ML <- factor(ml_topics$ML, levels = c("Supervised Learning", "Unsupervised Learning",
+                                                              "Deep Learning", "Reinforcement learning",
+                                                              "Human interpretable information extraction", "Big Data"),
+                              labels = c("Supervised Learning", "Unsupervised Learning",
+                                         "Deep Learning", "Reinforcement Learning",
+                                         "Human interpretable info extraction", "Big Data"))
+ml_topics$id <- as.factor(ml_topics$id)
+# ml_topics$id <- factor(ml_topics$id, labels = c("Matrix factorization", "Linear models", "Supervised neural networks",
+#                                                  "Human interpretable information extraction", "Clustering", "Deep learning",
+#                                                  "Ensemble methods", "Discriminant Analysis", "Unsupervised neural networks",
+#                                                  "Decision trees", "Manifold learning", "Nearest neighbors", "Support Vector Machines",
+#                                                  "Big data", "Stochastic Gradient Descent", "Gausian processes", "Feature selection",
+#                                                  "Associate rule", "Naive Bayes", "Reinforcement learning", "Multiclass and multilabel algorithms"))
+
+ml_topics$id <- factor(ml_topics$id, labels = c("Associate rule", "Big data", "Clustering", "Decision trees", "Deep learning",
+                                                "Discriminant Analysis", "Ensemble methods", "Feature selection","Gaussian processes", 
+                                                "Human interpretable information extraction", "Nearest neighbors", "Linear models", 
+                                                "Manifold learning", "Matrix factorization","Multiclass and multilabel algorithms", "Naive Bayes", 
+                                                "Supervised neural networks", "Unsupervised neural networks", "Reinforcement learning", 
+                                                "Stochastic Gradient Descent", "Support Vector Machines"))
+
+# make rank
+ml_rank <- ml_topics %>% 
+    arrange(Year, -n) %>% 
+    group_by(Year) %>% 
+    mutate(Rank = rank(desc(n), ties.method = "min"))
+
+# see the trends (for data exploration)
+ggplot(ml_rank %>% filter(Year > 1979), aes(x = Year, y= Rank, group = id)) +
+    geom_point() +
+    geom_line() +
+    theme_bw() +
+    ylab("Total number of publications") +
+    facet_wrap(.~ id, scales = "free_y") +
+    scale_y_reverse() +
+    # scale_color_brewer(palette = "Dark2") +
+    theme(text=element_text(size=16),
+          strip.text.x = element_text(size=14),
+          axis.text = element_text(size=12),
+          axis.title = element_text(size=14),
+          legend.position = "bottom",
+          legend.title = element_blank(),
+          legend.text = element_text(size = 12))
+
+#** ML ranks in different period (BETTER THAN YEARS) ####
+
+ml_topics_2 <- river_ml_short %>% group_by(id, Period, ML) %>% summarise(n=n())
+ml_topics_2$ML <- factor(ml_topics_2$ML, levels = c("Supervised Learning", "Unsupervised Learning",
+                                                "Deep Learning", "Reinforcement learning",
+                                                "Human interpretable information extraction", "Big Data"),
+                       labels = c("Supervised Learning", "Unsupervised Learning",
+                                  "Deep Learning", "Reinforcement Learning",
+                                  "Human interpretable info extraction", "Big Data"))
+ml_topics_2$id <- as.factor(ml_topics_2$id)
+
+# ml_topics_2$id <- factor(ml_topics_2$id, labels = c("Matrix factorization", "Linear models", "Supervised neural networks",
+#                                                  "Human interpretable information extraction", "Clustering", "Deep learning",
+#                                                  "Ensemble methods", "Discriminant Analysis", "Unsupervised neural networks",
+#                                                  "Decision trees", "Manifold learning", "Nearest neighbors", "Support Vector Machines",
+#                                                  "Big data", "Stochastic Gradient Descent", "Gausian processes", "Feature selection",
+#                                                  "Associate rule", "Naive Bayes", "Reinforcement learning", "Multiclass and multilabel algorithms"))
+
+ml_topics_2$id <- factor(ml_topics_2$id, labels = c("Associate rule", "Big data", "Clustering", "Decision trees", "Deep learning",
+                                                "Discriminant Analysis", "Ensemble methods", "Feature selection","Gaussian processes", 
+                                                "Human interpretable information extraction", "Nearest neighbors", "Linear models", 
+                                                "Manifold learning", "Matrix factorization","Multiclass and multilabel algorithms", "Naive Bayes", 
+                                                "Supervised neural networks", "Unsupervised neural networks", "Reinforcement learning", 
+                                                "Stochastic Gradient Descent", "Support Vector Machines"))
 
 
+# make rank
+ml_rank_2 <- ml_topics_2 %>% 
+    arrange(Period, -n) %>% 
+    group_by(Period) %>% 
+    mutate(Rank = rank(desc(n), ties.method = "min"))
 
+# making point + error bar
+# make a new tibble 
 
+ml_rank_2_err <- list(aggregate(data = ml_rank_2, Rank ~ id, FUN = mean),
+                    aggregate(data = ml_rank_2, Rank ~ id, FUN = min),
+                    aggregate(data = ml_rank_2, Rank ~ id, FUN = max)) %>% reduce(full_join, by = "id")
+
+colnames(ml_rank_2_err)[2:4] <- c("Mean rank", "Min rank", "Max rank")
+cc_2 <- seq_gradient_pal("blue", "red", "Lab")(seq(0,1,length.out=21))
+
+ml_rank_2_err$id <- reorder(ml_rank_2_err$id, -ml_rank_2_err$`Mean rank`)
+ml_rank_2_err <- ml_rank_2_err %>% arrange(`Mean rank`)
+
+plot_ml_rank_2_decade <- ggplot(ml_rank_2_err, aes(y = id, x =`Mean rank`)) +
+    geom_point(aes(size = 0.5, color = id)) + 
+    geom_errorbar(aes(xmin=`Min rank`, xmax=`Max rank`, color = id), width=0,
+                  position=position_dodge(0.05)) + 
+    scale_x_continuous(position = "top", limits = c(0,21)
+                       ,expand = c(0, 0)# remove the gap between axis and plot area
+    ) + 
+    scale_colour_manual(values=cc_2) + 
+    theme_classic() + 
+    geom_text(data = ml_rank_2_err[1:12,], # by dividing this into smaller dataframes we can have it in different sides
+              aes(label = id, x = `Max rank` +3),
+              # hjust = -1.05 ,
+              vjust = 0.25, size = 5) +
+    geom_text(data = ml_rank_2_err[13:21,], # by dividing this into smaller dataframes we can have it in different sides
+              aes(label = id, x = `Min rank` -3),
+              # hjust = -1.05 ,
+              vjust = 0.25, size = 5) +
+    # geom_vline(xintercept = 10,  
+    #            color = "purple", size=0.5)+
+    xlab("Rank of Machine Learning")+
+    theme(text=element_text(size=14),
+          # axis.line.x = element_line(size = 1),
+          axis.ticks.x = element_line(size = 1),
+          axis.ticks.length.x = unit(5, "pt"),
+          axis.text = element_text(size=14),
+          axis.title = element_text(size=20),
+          axis.title.y = element_blank(),
+          axis.line.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          legend.position = "none")
+
+plot_ml_rank_2_decade
+ggsave("ml_rank_period.jpeg", plot_ml_rank_2_decade, units = 'cm', height = 20, width = 30, dpi = 300)
+
+plot_ml_rank_editable <- dml(ggobj = plot_ml_rank_2_decade)
+plot_ml_rank_doc <- read_pptx()
+plot_ml_rank_doc <- add_slide(plot_ml_rank_doc)
+plot_ml_rank_doc <- ph_with(x = plot_ml_rank_doc, value = plot_ml_rank_editable, location = ph_location_type(type = "body"))
+print(plot_ml_rank_doc, target = "research_ml_rank.pptx")
 
 # World map #### 
 
 
 
- # Top keywords ####
+# Top keywords ####
 
 KW_all <- function(x){
     if (nrow(x) == 0){
