@@ -40,6 +40,8 @@ library(usethis)
 library(pastecs)
 library(officer) # make editable map
 library(rvg) # make editable map
+library(ggvis)
+library(scales) # Make color gradient scales
 
 # Import datasets  ####
 
@@ -533,13 +535,16 @@ rank_research <- tibble(`Research Topics` = levels(river_research_rank$`Research
 
 river_research_rank <- left_join(river_research_rank, rank_research, by = "Research Topics")
 
+cols <- c("Increasing" = "red", "Decreasing" = "blue", "Stable" = "violet")
+
 plot_rank_group <- ggplot(river_research_rank, aes(x = Period, y= Rank, group = `Research Topics`)) +
     geom_point(aes(color = Trends, size = 1.01)) +
-    geom_line(aes(color = Trends, size = 1.005)) +
+    geom_line(aes(color = Trends, size = 1.005, alpha = 0.8)) +
     theme_bw() +
     ylab("Rank") +
     facet_wrap(.~Trends, ncol = 2) +
     scale_y_reverse() +
+    # scale_colour_manual(values = cols, ) +
     scale_color_brewer(palette = "Reds", direction=-1) +
     theme(text=element_text(size=18),
           strip.text.x = element_text(size=16),
@@ -562,6 +567,67 @@ plot_rank_group_doc <- add_slide(plot_rank_group_doc)
 plot_rank_group_doc <- ph_with(x = plot_rank_group_doc, value = plot_rank_group_editable, location = ph_location_type(type = "body"))
 print(plot_rank_group_doc, target = "research_rank_grouped.pptx")
 
+# Rank variability over decades (Best so far)
+
+river_trend_decade_err <- list(aggregate(data = river_research_rank, Rank ~ `Research Topics`, FUN = mean),
+                              aggregate(data = river_research_rank, Rank ~ `Research Topics`, FUN = min),
+                              aggregate(data = river_research_rank, Rank ~ `Research Topics`, FUN = max)) %>% 
+    reduce(full_join, by = "Research Topics")
+
+colnames(river_trend_decade_err)[2:4] <- c("Mean rank", "Min rank", "Max rank")
+
+cc <- seq_gradient_pal("blue", "red", "Lab")(seq(0,1,length.out=21))
+
+# reorder research topic order based on mean rank
+
+river_trend_decade_err$`Research Topics` <- reorder(river_trend_decade_err$`Research Topics`, -river_trend_decade_err$`Mean rank`)
+
+river_trend_decade_err <- river_trend_decade_err %>% arrange(`Mean rank`)
+
+plot_rank_decade <- ggplot(river_trend_decade_err, aes(y = `Research Topics`, x =`Mean rank`)) +
+    geom_point(aes(size = 0.5, color = `Research Topics`)) + 
+    geom_errorbar(aes(xmin=`Min rank`, xmax=`Max rank`, color = `Research Topics`), width=0,
+                  position=position_dodge(0.05)) + 
+    scale_x_continuous(position = "top", limits = c(0,21)
+                       ,expand = c(0, 0)# remove the gap between axis and plot area
+                       ) + 
+    scale_colour_manual(values=cc) + 
+    theme_classic() + 
+    geom_text(data = river_trend_decade_err[1:12,], # by dividing this into smaller dataframes we can have it in different sides
+              aes(label = `Research Topics`, x = `Max rank` +3),
+              # hjust = -1.05 ,
+              vjust = 0.25, size = 5) +
+    geom_text(data = river_trend_decade_err[13:21,], # by dividing this into smaller dataframes we can have it in different sides
+              aes(label = `Research Topics`, x = `Min rank` -3),
+              # hjust = -1.05 ,
+              vjust = 0.25, size = 5) +
+    # geom_vline(xintercept = 10,  
+    #            color = "purple", size=0.5)+
+    xlab("Rank")+
+    theme(text=element_text(size=14),
+          # axis.line.x = element_line(size = 1),
+          axis.ticks.x = element_line(size = 1),
+          axis.ticks.length.x = unit(5, "pt"),
+          axis.text = element_text(size=14),
+          axis.title = element_text(size=20),
+          axis.title.y = element_blank(),
+          axis.line.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          legend.position = "none")
+
+plot_rank_decade
+
+ggsave("rank_decade.jpeg", plot_rank_decade,  units = 'cm', height = 20, width = 20, dpi = 300)
+
+# good graph 
+plot_rank_decade_editable <- dml(ggobj = plot_rank_decade)
+plot_rank_decade_doc <- read_pptx()
+plot_rank_decade_doc <- add_slide(plot_rank_decade_doc)
+plot_rank_decade_doc <- ph_with(x = plot_rank_decade_doc, value = plot_rank_decade_editable, location = ph_location_type(type = "body"))
+print(plot_rank_decade_doc, target = "research_rank_decade.pptx")
+
+
 # Rank variability over years ####
 
 river_rank_year <- river_ml_short[,c(1,2, str_which(colnames(river_ml_short), "Year"), (str_which(colnames(river_ml_short), "Period")+1):ncol(river_ml_short))]
@@ -576,13 +642,15 @@ river_rank_year$id <- as.factor(river_rank_year$id)
 rank_year_total <- as_tibble(lapply(river_rank_year[,4:ncol(river_rank_year)], sum))
 
 river_research_year <- river_rank_year %>% select(-id, - ML) 
-river_research_year <- aggregate(data = river_research_year, .~Year, sum)
+river_research_year[is.na(river_research_year)] <- 0
+river_research_year <- aggregate(data = river_research_year, . ~ Year, FUN = sum, na.rm=TRUE) 
 river_research_year <- river_research_year %>% filter(Year != "2021") %>% 
     pivot_longer(cols = -c(Year), names_to = "Research Topics", values_to = "Number of publications")
 
 river_trend_year <- river_research_year %>% 
     arrange(Year, -`Number of publications`) %>%
     group_by(Year) %>% mutate(Rank = rank(desc(`Number of publications`), ties.method = "min"))
+river_trend_year$`Research Topics` <- as.factor(river_trend_year$`Research Topics`)
 # see the trends
 ggplot(river_trend_year %>% filter(Year > 1979), aes(x = Year, y= Rank, group = `Research Topics`)) +
     geom_point() +
@@ -611,13 +679,35 @@ river_trend_point_err <- list(aggregate(data = river_trend_year[river_trend_year
 
 colnames(river_trend_point_err)[2:4] <- c("Mean rank", "Min rank", "Max rank")
 
-ggplot(river_trend_point_err, aes(x = `Research Topics`, y =`Mean rank`)) +
-    geom_point() + 
-    geom_errorbar(aes(ymin=`Min rank`, ymax=`Max rank`), width=.2,
-                  position=position_dodge(0.05))
+cc <- seq_gradient_pal("blue", "red", "Lab")(seq(0,1,length.out=21))
+
+plot_rank_year <- ggplot(river_trend_point_err, aes(y = `Research Topics`, x =`Mean rank`)) +
+    geom_point(aes(size = 0.5, color = `Research Topics`)) + 
+    geom_errorbar(aes(xmin=`Min rank`, xmax=`Max rank`, color = `Research Topics`), width=.2,
+                  position=position_dodge(0.05)) + 
+    scale_x_reverse(position = "top") + 
+    scale_colour_manual(values=cc) + 
+    theme_classic() + 
+    geom_text(data = river_trend_point_err, 
+              aes(label = `Research Topics`, x = `Min rank` -2),
+              # hjust = -1.05 ,
+              vjust = 0.5, size = 4) +
+    theme(text=element_text(size=12),
+          # axis.line.x = element_line(size = 1),
+          axis.ticks.x = element_line(size = 1),
+          axis.ticks.length.x = unit(5, "pt"),
+          axis.text = element_text(size=14),
+          axis.title = element_text(size=20),
+          axis.title.y = element_blank(),
+          axis.line.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          legend.position = "none")
+
+plot_rank_year
+ggsave("rank_year.jpeg", plot_rank_year,  units = 'cm', height = 20, width = 30, dpi = 300)
 
 
-# steps: reserve axis. make them minus --> color based on gradient --> put the number in the end of the error bar --> PERFECT 
 
 # Temporal trends of modelling techniques ####
 
