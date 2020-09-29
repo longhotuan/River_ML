@@ -42,7 +42,8 @@ library(officer) # make editable map
 library(rvg) # make editable map
 library(ggvis)
 library(scales) # Make color gradient scales
-
+library(dendextend) # make dendrogram plots
+library(ggdendro) # make dendrogram plots
 # Import datasets  ####
 
 list_river_mlvised <- list.files(pattern = "*.csv")
@@ -340,7 +341,7 @@ write_csv(river_ml_data_final, "river_ml_data.csv")
 write_feather(river_ml_data_final, "river_ml_data.feather")
 rm(ml_type, river_ml_data_country, river_ml_data_lat, river_ml_data_long, list_river_mlvised)
 
-# Temporal trends of research topics #### 
+# Temporal trends of research topics (NOT SO GOOD)#### 
 
 river_research <- river_ml_short[,c(1,2,str_which(colnames(river_ml_short), "Period"):ncol(river_ml_short))]
 river_research[is.na(river_research)] <- 0
@@ -355,7 +356,7 @@ river_research$id <- as.factor(river_research$id)
 
 research_total <- as_tibble(lapply(river_research[,4:ncol(river_research)], sum))
 
-# Over period and id
+# Over period and id 
 
 river_research_ML_id <- aggregate(data = river_research, .~Period+id+ML, sum) 
 river_research_ML_id <- river_research_ML_id %>% pivot_longer(cols = -c(Period, id, ML), names_to = "Research Topics", values_to = "Number of publications")
@@ -409,11 +410,12 @@ ggsave("research_period.jpeg", ggplot(river_research_period %>% filter(Period !=
            geom_line() +
            theme_bw() +
            ylab("Total number of publications") +
+           xlab("Periods") +
            facet_wrap(.~`Research Topics`, scales = "free_y") +
            # scale_color_brewer(palette = "Dark2") +
            theme(text=element_text(size=16),
-                 strip.text.x = element_text(size=14),
-                 axis.text = element_text(size=12),
+                 strip.text.x = element_text(size=12),
+                 axis.text = element_text(size=8.5),
                  axis.title = element_text(size=14),
                  legend.position = "bottom",
                  legend.title = element_blank(),
@@ -503,21 +505,25 @@ plot_rank_group <- ggplot(river_research_rank, aes(x = Period, y= Rank, group = 
     geom_point(aes(color = Trends, size = 1.01)) +
     geom_line(aes(color = Trends, size = 1.005, alpha = 0.8)) +
     theme_bw() +
-    ylab("Rank") +
+    ylab("Rank of Research Topics") +
+    xlab("Periods") +
     facet_wrap(.~Trends, ncol = 2) +
     scale_y_reverse() +
     # scale_colour_manual(values = cols, ) +
     scale_color_brewer(palette = "Reds", direction=-1) +
-    theme(text=element_text(size=18),
-          strip.text.x = element_text(size=16),
-          axis.text = element_text(size=14),
-          axis.title = element_text(size=16),
+    theme(text=element_text(size=22),
+          strip.text.x = element_text(size=20),
+          axis.text = element_text(size=18),
+          axis.title = element_text(size=20),
           legend.position = "none",
           legend.title = element_blank(),
           legend.text = element_text(size = 14))+ 
-    geom_text(data = river_research_rank[river_research_rank$Period == "2020", ], 
-              aes(label = river_research_rank$Rank[river_research_rank$Period == "2020"]),
-                            hjust = -1.05 ,vjust = 0.5, size = 6) 
+    geom_text(data = river_research_rank[river_research_rank$Period == "2020", ][1:9,], 
+              aes(label = river_research_rank$Rank[river_research_rank$Period == "2020"][1:9]),
+                            hjust = -1.05 ,vjust = 0.5, size = 6) +
+    geom_text(data = river_research_rank[river_research_rank$Period == "2020", ][10:21,], 
+              aes(label = river_research_rank$Rank[river_research_rank$Period == "2020"][10:21]),
+              hjust = -0.5 ,vjust = 0.5, size = 6) 
 plot_rank_group
 ggsave("research_rank_grouped_color.jpeg", plot_rank_group
        ,  units = 'cm', height = 40, width = 30, dpi = 300)
@@ -630,7 +636,6 @@ ggplot(river_trend_year %>% filter(Year > 1979), aes(x = Year, y= Rank, group = 
           legend.text = element_text(size = 12))
 
 # making point + error bar
-
 # make a new tibble 
 
 river_trend_point_err <- list(aggregate(data = river_trend_year[river_trend_year$Year > 1979,], Rank ~ `Research Topics`, FUN = mean),
@@ -814,18 +819,50 @@ plot_ml_rank_2_decade <- ggplot(ml_rank_2_err, aes(y = id, x =`Mean rank`)) +
     ) + 
     scale_colour_manual(values=cc_2) + 
     theme_classic() + 
-    geom_text(data = ml_rank_2_err[1:12,], # by dividing this into smaller dataframes we can have it in different sides
+    geom_text(data = ml_rank_2_err[1:2,], # by dividing this into smaller dataframes we can have it in different sides
+              aes(label = id, x = `Max rank` +2),
+              # hjust = -1.05 ,
+              vjust = 0.25, size = 5) +
+    geom_text(data = ml_rank_2_err[3,], # by dividing this into smaller dataframes we can have it in different sides
               aes(label = id, x = `Max rank` +3),
               # hjust = -1.05 ,
               vjust = 0.25, size = 5) +
-    geom_text(data = ml_rank_2_err[13:21,], # by dividing this into smaller dataframes we can have it in different sides
+    geom_text(data = ml_rank_2_err[4,], # by dividing this into smaller dataframes we can have it in different sides
+              aes(label = id, x = `Max rank` +4.2),
+              # hjust = -1.05 ,
+              vjust = 0.25, size = 5) +
+    geom_text(data = ml_rank_2_err[5:9,], # by dividing this into smaller dataframes we can have it in different sides
+              aes(label = id, x = `Max rank` +2),
+              # hjust = -1.05 ,
+              vjust = 0.25, size = 5) +
+    geom_text(data = ml_rank_2_err[10:11,], # by dividing this into smaller dataframes we can have it in different sides
+              aes(label = id, x = `Max rank` +3),
+              # hjust = -1.05 ,
+              vjust = 0.25, size = 5) +
+    geom_text(data = ml_rank_2_err[12,], # by dividing this into smaller dataframes we can have it in different sides
+              aes(label = id, x = `Max rank` +2),
+              # hjust = -1.05 ,
+              vjust = 0.25, size = 5) +
+    geom_text(data = ml_rank_2_err[13:14,], # by dividing this into smaller dataframes we can have it in different sides
+              aes(label = id, x = `Min rank` -2),
+              # hjust = -1.05 ,
+              vjust = 0.25, size = 5) +
+    geom_text(data = ml_rank_2_err[15,], # by dividing this into smaller dataframes we can have it in different sides
+              aes(label = id, x = `Min rank` -3),
+              # hjust = -1.05 ,
+              vjust = 0.25, size = 5) +
+    geom_text(data = ml_rank_2_err[16:20,], # by dividing this into smaller dataframes we can have it in different sides
+              aes(label = id, x = `Min rank` -2),
+              # hjust = -1.05 ,
+              vjust = 0.25, size = 5) +
+    geom_text(data = ml_rank_2_err[21,], # by dividing this into smaller dataframes we can have it in different sides
               aes(label = id, x = `Min rank` -3),
               # hjust = -1.05 ,
               vjust = 0.25, size = 5) +
     # geom_vline(xintercept = 10,  
     #            color = "purple", size=0.5)+
     xlab("Rank of Machine Learning")+
-    theme(text=element_text(size=14),
+    theme(text=element_text(size=16),
           # axis.line.x = element_line(size = 1),
           axis.ticks.x = element_line(size = 1),
           axis.ticks.length.x = unit(5, "pt"),
@@ -846,9 +883,56 @@ plot_ml_rank_doc <- add_slide(plot_ml_rank_doc)
 plot_ml_rank_doc <- ph_with(x = plot_ml_rank_doc, value = plot_ml_rank_editable, location = ph_location_type(type = "body"))
 print(plot_ml_rank_doc, target = "research_ml_rank.pptx")
 
-# World map #### 
+# World map (AFFILIATION) #### 
 
+list_ml <- list.files(pattern = "*.txt")
+list_ml_affi <- lapply(list_ml, read.delim, sep = "\t", stringsAsFactors = FALSE)
+names(list_ml_affi) <- str_split_fixed(list_ml,pattern = "\\.", n =2)[,1]
+ml_affi <- rbindlist(list_ml_affi, idcol = TRUE)
+ml_affi$.id <- as.factor(ml_affi$.id)
 
+# remove overlapped countries in one publication 
+
+t1 <- data.frame()
+
+for (i in 1:nlevels(ml_affi$.id)){
+    t <- ml_affi[ml_affi$.id == levels(ml_affi$.id)[i]]
+    t <-  t[!duplicated(t[,c("entry_number", "affiliation.country")]),]
+    t1 <- rbind(t1, t)
+}
+
+ml_affi <- t1
+rm(t1)
+
+ml_affi <- ml_affi %>% select(.id, affilname, affiliation.city, affiliation.country)
+colnames(ml_affi) <- c("id", "Institution", "City", "Country")
+ml_affi <- ml_affi[-which(is.na(ml_affi[,2:4])), ] 
+
+ml_affi_country <- ml_affi %>%
+    group_by(Country) %>% 
+    summarise(n = n()) %>% 
+    mutate(Percentage = n*100/sum(n)) %>% 
+    arrange(desc(n))
+ml_affi_country$Percentage <- round(ml_affi_country$Percentage, digits = 0)
+
+ml_affi_country$Code <- countrycode(ml_affi_country$Country, 'country.name', 'iso3c')
+ml_affi_country <- ml_affi_country[complete.cases(ml_affi_country),]
+ml_affi_map <- joinCountryData2Map(ml_affi_country, joinCode = "ISO3", nameJoinColumn = "Code") # name of some countries is not correct
+  
+jpeg("map_ml_affi.jpeg", units = 'px', height = 1500, width = 2500, res = 300, pointsize = 8)
+mapParams <- mapCountryData(ml_affi_map, nameColumnToPlot = "n", 
+                            addLegend=FALSE,
+                            numCats = 10, mapRegion = "world", catMethod = "logFixedWidth",
+                            colourPalette = brewer.pal(10,"PuBuGn"),
+                            borderCol = "grey",
+                            mapTitle = "",
+                            missingCountryCol = "white")
+do.call(addMapLegend, c(mapParams, 
+                        legendWidth=0.5, 
+                        legendMar = 3,
+                        legendLabels ="all",
+                        legendIntervals = "data"))
+dev.off()
 
 # Top keywords ####
 
@@ -1076,3 +1160,58 @@ save_topjournal <- function(x){
 }
 
 ggsave(filename = "river_ml_journal.jpeg", save_topjournal(river_ml_short),  units = 'cm', height = 20, width = 40, dpi = 300)
+
+# Dendorgram for ML ####
+
+ml_dendogram <- river_ml_short[, c(which(colnames(river_ml_short) == "id"), (which(colnames(river_ml_short) == "Period")+1):ncol(river_ml_short))]
+ml_dendogram[is.na(ml_dendogram)] <- 0
+ml_den <- aggregate(data = ml_dendogram, . ~ id, FUN = sum)
+ml_den$id[2] <- "Big data"
+ml_den$id[5] <- "Deep learning"
+ml_den$id[6:7] <- c("Discriminant Analysis", "Ensemble methods")
+ml_den$id[c(9:11,13, 15, 17:21)] <- c("Gaussian processes", "Human interpretable information extraction", "Nearest neighbors", "Manifold learning",
+                                      "Multiclass and multilabel algorithms", "Supervised neural networks", "Unsupervised neural networks",
+                                      "Reinforcement learning", "Stochastic Gradient Descent", "Support Vector Machines")
+rownames(ml_den) <- ml_den$id
+ml_den <- ml_den %>% select(-id)
+
+# dendrogram base plots
+# dd <- dist(scale(ml_den), method = "manhattan")
+# hc <- hclust(dd, method = "ward.D")
+# plot(hc)
+# library("ape")
+# colors <- seq_gradient_pal("blue", "red", "Lab")(seq(0,1,length.out=5))
+# clus4 = cutree(hc, 5)
+# plot(as.phylo(hc), tip.color = colors[clus4],
+#      label.offset = 1, cex = 0.7)
+
+# ggplot dendrogram 
+
+
+dend <- ml_den %>%
+    dist(method = "manhattan") %>%
+    hclust(method = "ward.D") %>%
+    as.dendrogram() %>% 
+    set("branches_k_color", value = colors, k = 5)
+# Rectangular lines
+ddata <- as.ggdend(dend)
+
+ml_dendogram_graph <- ggplot(ddata,horiz = TRUE, theme = NULL) +
+    theme_void() +
+    xlab("Height") +
+    ylim(40000, -10000) +
+    theme(text=element_text(size=16),
+          axis.text = element_blank(),
+          axis.title = element_blank(),
+          axis.ticks = element_blank())
+ml_dendogram_graph
+ggsave("ml_dendrogram.jpeg", ml_dendogram_graph , units = 'cm', height = 20, width = 40, dpi = 300)
+
+
+ml_dendro_editable <- dml(ggobj = ml_dendogram_graph)
+ml_dendro_doc <- read_pptx()
+ml_dendro_doc <- add_slide(ml_dendro_doc)
+ml_dendro_doc <- ph_with(x = ml_dendro_doc, value = ml_dendro_editable, location = ph_location_type(type = "body"))
+print(ml_dendro_doc, target = "ml_dendro.pptx")
+
+
