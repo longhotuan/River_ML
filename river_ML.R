@@ -333,7 +333,70 @@ river_ml_data$Movement[str_detect(str_to_lower(river_ml_data$`Author Keywords`),
 river_ml_data$`Spatiotemporal trends`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "temporal*|season*|spati*")] <- 1
 river_ml_data$Microbial[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "microbi|16s rdna|fluorescence")] <- 1
 
+# Categorize research to different modelling techniques ####
+# model validation, model evaluation, hyperparameter tuning, sensitivity analysis, uncertainty analysis, model selection, model optimization
 
+model_list <- c("Model validation", "Model evaluation", "Model optimization", "Model selection", 
+                "Hyperparameter tuning", "Sensitivity analysis", "Uncertainty analysis")
+
+
+river_ml_data[, model_list] <- 0
+
+river_ml_data$`Model validation`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "cross validation|cross-validation|model valid*|
+                                            three-fold|three fold|3-fold|3 fold|k-fold|k fold|ten fold|ten-fold|10 fold|10-fold|leave one out|loo|
+                                            loocv|leave one group out|lpo|lpocv|leave p groups out|lpgo|hold-out|hold out|shuffle split|time series split|bootstrap") | 
+                                   str_detect(str_to_lower(river_ml_data$Abstract), pattern = "cross validation|cross-validation|model valid*|
+                                            three-fold|three fold|3-fold|3 fold|k-fold|k fold|ten fold|ten-fold|10 fold|10-fold|leave one out|loo|
+                                            loocv|leave one group out|lpo|lpocv|leave p groups out|lpgo|hold-out|hold out|shuffle split|time series split|bootstrap")] <- 1 
+
+river_ml_data$`Model evaluation`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "learning curve*|confusion matri*|model accurac*|
+                                            model precision|model recall|model specificity|model sensitivity|true positive rate*|tpr|true negative rate*|
+                                            positive predictive value*|ppv|negative predictive value*|npv|false negative rate*|fnr|false positive rate*|
+                                            fpr|matthews correlation coefficient*|mcc|fowlkes–mallows index*|fowlkes mallows index*|fm index|cohen’s kappa|kappa|
+                                            correctly classified instances|cci|f1 score*|f-score*|f score*|f-measure*|jaccard|receiver operating characteristic|
+                                            roc|area under the curve|auc|log loss|max error|mean absolute error|mae|mean squared error|mse|
+                                            median absolute error|root mean squared error|rmse|root mean squared logarithmic error|rmsae|mdape|mape|gmrae|gmape|
+                                            r-squared|r square|coefficient of determination|gini coefficient") | 
+                                   str_detect(str_to_lower(river_ml_data$Abstract), pattern = "learning curve*|confusion matri*|model accurac*|
+                                            model precision|model recall|model specificity|model sensitivity|true positive rate*|tpr|true negative rate*|
+                                            positive predictive value*|ppv|negative predictive value*|npv|false negative rate*|fnr|false positive rate*|
+                                            fpr|matthews correlation coefficient*|mcc|fowlkes–mallows index*|fowlkes mallows index*|fm index|cohen’s kappa|kappa|
+                                            correctly classified instances|cci|f1 score*|f-score*|f score*|f-measure*|jaccard|receiver operating characteristic|
+                                            roc|area under the curve|auc|log loss|max error|mean absolute error|mae|mean squared error|mse|
+                                            median absolute error|root mean squared error|rmse|root mean squared logarithmic error|rmsae|mdape|mape|gmrae|gmape|
+                                            r-squared|r square|coefficient of determination|gini coefficient")] <- 1
+river_ml_data$`Model selection`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "step-backward|step-forward|step backward|step forward|
+                                           bias variance trade-off*|stepwise regression|forward stepwise|backward stepwise|backward selection|forward selection|
+                                           top-down|top down|step up|step-up|variable selection|likelihood ratio test|lrt|hypothesis testing|t-test|f*-test|
+                                           information criteri*|aic|bic|dic|fic|kic|waic|ebic|efic|lagrange multiplier*|wald test*|score test*") |
+                                  str_detect(str_to_lower(river_ml_data$Abstract), pattern = "step-backward|step-forward|step backward|step forward|
+                                           bias variance trade-off*|stepwise regression|forward stepwise|backward stepwise|backward selection|forward selection|
+                                           top-down|top down|step up|step-up|variable selection|likelihood ratio test|lrt|hypothesis testing|t-test|f*-test|
+                                           information criteri*|aic|bic|dic|fic|kic|waic|ebic|efic|lagrange multiplier*|wald test*|score test*")] <- 1
+river_ml_data$`Model optimization`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "model optimiz*|loss function minimization|
+                                              loss function minimization|optimization method*|optimisation method*|multiobjective optimization|
+                                              multiobjective optimization|optimization model*|optimization model*") | 
+                                     str_detect(str_to_lower(river_ml_data$Abstract), pattern = "model optimiz*|loss function minimization|
+                                              loss function minimization|optimization method*|optimisation method*|multiobjective optimization|
+                                              multiobjective optimization|optimization model*|optimization model*")] <- 1 
+river_ml_data$`Hyperparameter tuning`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "hyperparameter*|hyper-parameter*|
+                                                 grid search|parameter optimization|parameter optimisation|random search|
+                                                 bayesian optimization|Bayesian optimisation|gradient-based optimization|gradient-based optimisation|
+                                                 evolutionary optimization|evolutionary optimisation|population based training|population-based training|PBT") | 
+                                        str_detect(str_to_lower(river_ml_data$Abstract), pattern = "hyperparameter*|hyper-parameter*|
+                                                 grid search|parameter optimization|parameter optimisation|random search|
+                                                 bayesian optimization|Bayesian optimisation|gradient-based optimization|gradient-based optimisation|
+                                                 evolutionary optimization|evolutionary optimisation|population based training|population-based training|PBT")] <- 1
+river_ml_data$`Sensitivity analysis`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "sensitivity analys*|model sensitivity") |
+                                       str_detect(str_to_lower(river_ml_data$Abstract), pattern = "sensitivity analys*|model sensitivity")] <- 1
+river_ml_data$`Uncertainty analysis`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "uncertainty analys*|uncertainty propagat*|
+                                                uncertainty assess*|uncertainty characteri*|uncertainty matri*|error propagat*|Monte Carlo|
+                                                statistical uncertaint*|model uncertaint*|data uncertainty engine|due|output uncertaint*") |
+                                       str_detect(str_to_lower(river_ml_data$Abstract), pattern = "uncertainty analys*|uncertainty propagat*|
+                                                uncertainty assess*|uncertainty characteri*|uncertainty matri*|error propagat*|Monte Carlo|
+                                                statistical uncertaint*|model uncertaint*|data uncertainty engine|due|output uncertaint*")] <-1
+
+# save the file 
 river_ml_data_final <- river_ml_data %>% select(-Affi, -Country)
 river_ml_short <- river_ml_data[,c(1:str_which(colnames(river_ml_data), "Country"), str_which(colnames(river_ml_data), "Period"):ncol(river_ml_data))]
 
@@ -341,27 +404,33 @@ write_csv(river_ml_data_final, "river_ml_data.csv")
 write_feather(river_ml_data_final, "river_ml_data.feather")
 rm(ml_type, river_ml_data_country, river_ml_data_lat, river_ml_data_long, list_river_mlvised)
 
-# Temporal trends of research topics (NOT SO GOOD)#### 
+# Temporal trends of research topics (NOT SO GOOD) #### 
 
-river_research <- river_ml_short[,c(1,2,str_which(colnames(river_ml_short), "Period"):ncol(river_ml_short))]
+river_research <- river_ml_short[,c(1,2,str_which(colnames(river_ml_short), "Period"):str_which(colnames(river_ml_short), "Microbial"))]
 river_research[is.na(river_research)] <- 0
 river_research$ML <- as.factor(river_research$ML)
-river_research$ML <- factor(river_research$ML, levels = c("Supervised Learning", "Unsupervised Learning",
+river_research$ML <- factor(river_research$ML, 
+                            levels = c("Supervised Learning", "Unsupervised Learning",
                                                               "Deep Learning", "Reinforcement learning",
                                                               "Human interpretable information extraction", "Big Data"),
-                              labels = c("Supervised Learning", "Unsupervised Learning",
+                            labels = c("Supervised Learning", "Unsupervised Learning",
                                          "Deep Learning", "Reinforcement Learning",
                                          "Human interpretable info extraction", "Big Data"))
-river_research$id <- as.factor(river_research$id)
 
+river_research$id <- as.factor(river_research$id)
 research_total <- as_tibble(lapply(river_research[,4:ncol(river_research)], sum))
 
 # Over period and id 
 
 river_research_ML_id <- aggregate(data = river_research, .~Period+id+ML, sum) 
-river_research_ML_id <- river_research_ML_id %>% pivot_longer(cols = -c(Period, id, ML), names_to = "Research Topics", values_to = "Number of publications")
+river_research_ML_id <- river_research_ML_id %>% pivot_longer(cols = -c(Period, id, ML), 
+                                                              names_to = "Research Topics", 
+                                                              values_to = "Number of publications")
 
-ggsave("research_id_period.jpeg", ggplot(river_research_ML_id %>% filter(Period != 2020), aes(x = Period, y= `Number of publications`, group = `Research Topics`)) +
+ggsave("research_id_period.jpeg", ggplot(river_research_ML_id %>% 
+                                           filter(Period != 2020), aes(x = Period, 
+                                                                       y= `Number of publications`, 
+                                                                       group = `Research Topics`)) +
     geom_point(aes(color = `Research Topics`)) +
     geom_line(aes(color = `Research Topics`)) +
     theme_bw() +
@@ -382,9 +451,12 @@ ggsave("research_id_period.jpeg", ggplot(river_research_ML_id %>% filter(Period 
 
 river_research_ML <- river_research %>% select(-id) 
 river_research_ML <- aggregate(data = river_research_ML, .~Period+ML, sum) 
-river_research_ML <- river_research_ML %>% pivot_longer(cols = -c(Period, ML), names_to = "Research Topics", values_to = "Number of publications")
+river_research_ML <- river_research_ML %>% pivot_longer(cols = -c(Period, ML), 
+                                                        names_to = "Research Topics", 
+                                                        values_to = "Number of publications")
 
-ggsave("research_ML_period.jpeg", ggplot(river_research_ML %>% filter(Period != 2020), aes(x = Period, y= `Number of publications`, group = `Research Topics`)) +
+ggsave("research_ML_period.jpeg", ggplot(river_research_ML %>% filter(Period != 2020), 
+                                         aes(x = Period, y= `Number of publications`, group = `Research Topics`)) +
            geom_point(aes(color = `Research Topics`)) +
            geom_line(aes(color = `Research Topics`)) +
            theme_bw() +
@@ -534,7 +606,7 @@ plot_rank_group_doc <- add_slide(plot_rank_group_doc)
 plot_rank_group_doc <- ph_with(x = plot_rank_group_doc, value = plot_rank_group_editable, location = ph_location_type(type = "body"))
 print(plot_rank_group_doc, target = "research_rank_grouped.pptx")
 
-#** Rank variability over decades (BEST SO FAR) ####
+#** Rank variability over decades (BETTER THAN YEARS) ####
 
 river_trend_decade_err <- list(aggregate(data = river_research_rank, Rank ~ `Research Topics`, FUN = mean),
                               aggregate(data = river_research_rank, Rank ~ `Research Topics`, FUN = min),
@@ -596,7 +668,7 @@ print(plot_rank_decade_doc, target = "research_rank_decade.pptx")
 
 #** Rank variability over years (NOT SO GOOD)####
 
-river_rank_year <- river_ml_short[,c(1,2, str_which(colnames(river_ml_short), "Year"), (str_which(colnames(river_ml_short), "Period")+1):ncol(river_ml_short))]
+river_rank_year <- river_ml_short[,c(1,2, str_which(colnames(river_ml_short), "Year"), (str_which(colnames(river_ml_short), "Period")+1):str_which(colnames(river_ml_short), "Microbial"))]
 river_rank_year$ML <- as.factor(river_rank_year$ML)
 river_rank_year$ML <- factor(river_rank_year$ML, levels = c("Supervised Learning", "Unsupervised Learning",
                                                           "Deep Learning", "Reinforcement learning",
@@ -673,7 +745,7 @@ plot_rank_year <- ggplot(river_trend_point_err, aes(y = `Research Topics`, x =`M
 plot_rank_year
 ggsave("rank_year.jpeg", plot_rank_year,  units = 'cm', height = 20, width = 30, dpi = 300)
 
-# Temporal trends of modelling techniques ####
+# Temporal trends of ML types ####
 #**  ML types in different periods (NOT SO GOOD)####
 
 river_mlt_period <- river_ml_short %>% filter(Period != "2020") %>% group_by(Period, id, ML) %>% summarise(n =n())
@@ -882,6 +954,81 @@ plot_ml_rank_doc <- read_pptx()
 plot_ml_rank_doc <- add_slide(plot_ml_rank_doc)
 plot_ml_rank_doc <- ph_with(x = plot_ml_rank_doc, value = plot_ml_rank_editable, location = ph_location_type(type = "body"))
 print(plot_ml_rank_doc, target = "research_ml_rank.pptx")
+
+# Temporal trends of modeling methods trends #### 
+
+river_modeling <- river_ml_short[,c(1,2,str_which(colnames(river_ml_short), "Year"), str_which(colnames(river_ml_short), "Period"),
+                                    str_which(colnames(river_ml_short), "Model validation"):str_which(colnames(river_ml_short), "Uncertainty analysis"))]
+river_modeling$ML <- as.factor(river_modeling$ML)
+river_modeling$ML <- factor(river_modeling$ML, 
+                            levels = c("Supervised Learning", "Unsupervised Learning",
+                                       "Deep Learning", "Reinforcement learning",
+                                       "Human interpretable information extraction", "Big Data"),
+                            labels = c("Supervised Learning", "Unsupervised Learning",
+                                       "Deep Learning", "Reinforcement Learning",
+                                       "Human interpretable info extraction", "Big Data"))
+river_modeling$id <- as.factor(river_modeling$id)
+river_modeling_period <- river_modeling %>% select(-id, - ML, -Year) 
+river_modeling_period <- aggregate(data = river_modeling_period, .~Period, sum)
+river_modeling_period <- river_modeling_period %>% pivot_longer(cols = -c(Period), names_to = "Modeling methods", values_to = "Number of publications")
+river_modeling_total <- river_ml_short %>% group_by(Period) %>% summarise(n=n())
+river_modeling_period <- left_join(river_modeling_period, river_modeling_total, by= "Period") %>% mutate(Percentage = round(`Number of publications`*100/n, digits =2))
+cc_model <- seq_gradient_pal("blue", "red", "Lab")(seq(0,1,length.out=21))
+
+
+river_modeling_period$`Modeling methods` <- as.factor(river_modeling_period$`Modeling methods`)
+river_modeling_period$`Modeling methods` <- factor(river_modeling_period$`Modeling methods`, 
+                                                   levels = c("Model selection", "Model validation", "Uncertainty analysis", "Model evaluation",
+                                                              "Sensitivity analysis", "Model optimization", "Hyperparameter tuning"))
+river_modeling_period <- river_modeling_period[with(river_modeling_period, order(Period, Percentage)),]
+
+ggsave("modeling_methods_period.jpeg", ggplot(river_modeling_period, 
+                                              aes(x = Period, y= Percentage, group = `Modeling methods`)) +
+         geom_point(aes(color = `Modeling methods`, size = 0.7)) +
+         geom_line(aes(color = `Modeling methods`, size = 0.5)) +
+         theme_bw() +
+         ylab("Percentage of the publications") +
+         xlab("Periods") +
+         # facet_wrap(.~`Modeling methods`, scales = "free_y") +
+         # scale_color_brewer(palette = "Dark2") +
+         scale_colour_manual(values=cc_model[rev(seq(0,21,by = 3))]) + 
+         # guides(size = FALSE) +
+         geom_text(data = river_modeling_period[river_modeling_period$Period == "2020", ], 
+                   aes(label = c(7:1)),
+                   hjust = -1.5 ,
+                   vjust = 0.5, size = 5) +
+         theme(text=element_text(size=18),
+               # strip.text.x = element_text(size=12),
+               axis.text = element_text(size=14),
+               axis.title = element_text(size=16),
+               legend.position = "none",
+               legend.title = element_text(size = 16),
+               legend.text = element_text(size = 14))
+       ,  units = 'cm', height = 30, width = 30, dpi = 300)
+ggsave("modeling_methods_period2.jpeg", ggplot(river_modeling_period, 
+                                               aes(x = Period, y= Percentage, group = `Modeling methods`)) +
+         geom_point(aes(color = `Modeling methods`, size = 0.7)) +
+         geom_line(aes(color = `Modeling methods`, size = 0.5)) +
+         theme_bw() +
+         ylab("Percentage of the publications (%)") +
+         xlab("Periods") +
+         # facet_wrap(.~`Modeling methods`, scales = "free_y") +
+         scale_color_brewer(palette = "Paired",direction = -1) +
+         # scale_colour_manual(values=cc_model[rev(seq(0,21,by = 3))]) + 
+         guides(size = FALSE) +
+         # geom_text(data = river_modeling_period[river_modeling_period$Period == "2020", ], 
+         #           aes(label = c(7:1)),
+         #           hjust = -1.5 ,
+         #           vjust = 0.5, size = 5) +
+         theme(text=element_text(size=20),
+               # strip.text.x = element_text(size=12),
+               axis.text = element_text(size=16),
+               axis.title = element_text(size=18),
+               legend.position = "bottom",
+               legend.title =element_blank(),
+               legend.text = element_text(size = 16))
+       ,  units = 'cm', height = 20, width = 30, dpi = 300)
+
 
 # World map (AFFILIATION) #### 
 
@@ -1163,7 +1310,7 @@ ggsave(filename = "river_ml_journal.jpeg", save_topjournal(river_ml_short),  uni
 
 # Dendorgram for ML ####
 
-ml_dendogram <- river_ml_short[, c(which(colnames(river_ml_short) == "id"), (which(colnames(river_ml_short) == "Period")+1):ncol(river_ml_short))]
+ml_dendogram <- river_ml_short[, c(which(colnames(river_ml_short) == "id"), (which(colnames(river_ml_short) == "Period")+1):str_which(colnames(river_ml_short), "Microbial"))]
 ml_dendogram[is.na(ml_dendogram)] <- 0
 ml_den <- aggregate(data = ml_dendogram, . ~ id, FUN = sum)
 ml_den$id[2] <- "Big data"
@@ -1213,5 +1360,3 @@ ml_dendro_doc <- read_pptx()
 ml_dendro_doc <- add_slide(ml_dendro_doc)
 ml_dendro_doc <- ph_with(x = ml_dendro_doc, value = ml_dendro_editable, location = ph_location_type(type = "body"))
 print(ml_dendro_doc, target = "ml_dendro.pptx")
-
-
