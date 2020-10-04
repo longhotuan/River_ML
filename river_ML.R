@@ -15,6 +15,7 @@ library(future)
 library(parallel)
 library(doParallel)
 library(feather)
+library(Kendall) # Mann-Kendall trend test
 
 # data visualization 
 
@@ -396,8 +397,17 @@ river_ml_data$`Uncertainty analysis`[str_detect(str_to_lower(river_ml_data$`Auth
                                                 uncertainty assess*|uncertainty characteri*|uncertainty matri*|error propagat*|Monte Carlo|
                                                 statistical uncertaint*|model uncertaint*|data uncertainty engine|due|output uncertaint*")] <-1
 
-# save the file 
+# save the file ####
 river_ml_data_final <- river_ml_data %>% select(-Affi, -Country)
+river_ml_data_final$id <- as.factor(river_ml_data_final$id)
+river_ml_data_final$id <- factor(river_ml_data_final$id, labels = c("Associate rule", "Big data", "Clustering", "Decision trees", "Deep learning",
+                                                    "Discriminant Analysis", "Ensemble methods", "Feature selection","Gaussian processes", 
+                                                    "Human interpretable information extraction", "Nearest neighbors", "Linear models", 
+                                                    "Manifold learning", "Matrix factorization","Multiclass and multilabel algorithms", "Naive Bayes", 
+                                                    "Supervised neural networks", "Unsupervised neural networks", "Reinforcement learning", 
+                                                    "Stochastic Gradient Descent", "Support Vector Machines"))
+
+
 river_ml_short <- river_ml_data[,c(1:str_which(colnames(river_ml_data), "Country"), str_which(colnames(river_ml_data), "Period"):ncol(river_ml_data))]
 
 write_csv(river_ml_data_final, "river_ml_data.csv")
@@ -545,8 +555,14 @@ for (i in seq_len(nlevels(as.factor(river_research_rank$`Research Topics`)))){
         river_research_rank$Trends[river_research_rank$`Research Topics` == river_research_rank$`Research Topics`[i]] <- "Stable"
     }
 }
+
+river_research_rank$Trends[river_research_rank$`Research Topics` == "Management"] <- "Stable"
+river_research_rank$Trends[river_research_rank$`Research Topics` == "Groundwater"] <- "Stable"
+
 river_research_rank$Trends <- as.factor(river_research_rank$Trends)
 river_research_rank$Trends <- relevel(river_research_rank$Trends, "Increasing")
+
+# research topics groundwater and managment should be moved to stable 
 
 river_research_rank$`Research Topics` <- as.factor(river_research_rank$`Research Topics`)
 plot_rank <- ggplot(river_research_rank, aes(x = Period, y= Rank, group = `Research Topics`)) + # not so good 
@@ -564,7 +580,7 @@ plot_rank <- ggplot(river_research_rank, aes(x = Period, y= Rank, group = `Resea
           legend.position = c(0.8, 0.2),
           legend.title = element_blank(),
           legend.text = element_text(size = 12))
-plot_rank
+plot_rank # not nice
 ggsave("research_rank_grouped.jpeg", plot_rank,  units = 'cm', height = 20, width = 35, dpi = 300)
 
 rank_research <- tibble(`Research Topics` = levels(river_research_rank$`Research Topics`), nlevels = seq_len(nlevels(river_research_rank$`Research Topics`)))
@@ -665,7 +681,6 @@ plot_rank_decade_doc <- add_slide(plot_rank_decade_doc)
 plot_rank_decade_doc <- ph_with(x = plot_rank_decade_doc, value = plot_rank_decade_editable, location = ph_location_type(type = "body"))
 print(plot_rank_decade_doc, target = "research_rank_decade.pptx")
 
-
 #** Rank variability over years (NOT SO GOOD)####
 
 river_rank_year <- river_ml_short[,c(1,2, str_which(colnames(river_ml_short), "Year"), (str_which(colnames(river_ml_short), "Period")+1):str_which(colnames(river_ml_short), "Microbial"))]
@@ -691,9 +706,10 @@ river_trend_year <- river_research_year %>%
 
 river_trend_year$`Research Topics` <- as.factor(river_trend_year$`Research Topics`)
 # see the trends
-ggplot(river_trend_year %>% filter(Year > 1979), aes(x = Year, y= Rank, group = `Research Topics`)) +
+ggsave("research_rank_year.jpeg", ggplot(river_trend_year %>% filter(Year > 1979), aes(x = Year, y= Rank, group = `Research Topics`)) +
     geom_point() +
     geom_line() +
+    geom_smooth() +
     theme_bw() +
     ylab("Total number of publications") +
     facet_wrap(.~`Research Topics`, scales = "free_y") +
@@ -706,8 +722,9 @@ ggplot(river_trend_year %>% filter(Year > 1979), aes(x = Year, y= Rank, group = 
           legend.position = "bottom",
           legend.title = element_blank(),
           legend.text = element_text(size = 12))
+     ,units = 'cm', height = 20, width = 30, dpi = 300)
 
-# making point + error bar
+.# making point + error bar
 # make a new tibble 
 
 river_trend_point_err <- list(aggregate(data = river_trend_year[river_trend_year$Year > 1979,], Rank ~ `Research Topics`, FUN = mean),
@@ -746,7 +763,7 @@ plot_rank_year
 ggsave("rank_year.jpeg", plot_rank_year,  units = 'cm', height = 20, width = 30, dpi = 300)
 
 # Temporal trends of ML types ####
-#**  ML types in different periods (NOT SO GOOD)####
+#** ML types in different periods (NOT SO GOOD)####
 
 river_mlt_period <- river_ml_short %>% filter(Period != "2020") %>% group_by(Period, id, ML) %>% summarise(n =n())
 river_mlt_period$Period <- as.character(river_mlt_period$Period)
@@ -811,7 +828,7 @@ ml_topics$id <- factor(ml_topics$id, labels = c("Associate rule", "Big data", "C
                                                 "Discriminant Analysis", "Ensemble methods", "Feature selection","Gaussian processes", 
                                                 "Human interpretable information extraction", "Nearest neighbors", "Linear models", 
                                                 "Manifold learning", "Matrix factorization","Multiclass and multilabel algorithms", "Naive Bayes", 
-                                                "Supervised neural networks", "Unsupervised neural networks", "Reinforcement learning", 
+                                                "Unsupervised neural networks", "Supervised neural networks", "Reinforcement learning", 
                                                 "Stochastic Gradient Descent", "Support Vector Machines"))
 
 # make rank
@@ -1360,3 +1377,39 @@ ml_dendro_doc <- read_pptx()
 ml_dendro_doc <- add_slide(ml_dendro_doc)
 ml_dendro_doc <- ph_with(x = ml_dendro_doc, value = ml_dendro_editable, location = ph_location_type(type = "body"))
 print(ml_dendro_doc, target = "ml_dendro.pptx")
+
+# Mann-Kendall trend test in research topics ####
+# 1. Your data isn’t collected seasonally (e.g. only during the summer and winter months), because the test won’t work if alternating upward and downward trends exist in the data. Another test—the Seasonal Kendall Test—is generally used for seasonally collected data.
+# 2. Your data does not have any covariates—other factors that could influence your data other than the ones you’re plotting. See Covariates for more information.
+# 3. You have only one data point per time period. If you have multiple points, use the median value.
+# yearly trend
+
+river_topics <- split(river_trend_year, f = river_trend_year$`Research Topics`)
+river_topics_MK <- lapply(river_topics, function(x){y <- MannKendall(x$Rank); return(y)})
+
+
+# yearly trend but after 1980s
+
+river_topics_aft_80s <- split(river_trend_year %>% filter(Year > 1979), f = river_trend_year$`Research Topics`)
+river_topics_80s_MK <- lapply(river_topics_aft_80s, function(x){y <- MannKendall(x$Rank); return(y)})
+
+
+# yearly trend but after 1990s
+
+river_topics_aft_90s <- split(river_trend_year %>% filter(Year > 1989), f = river_trend_year$`Research Topics`)
+river_topics_90s_MK <- lapply(river_topics_aft_90s, function(x){y <- MannKendall(x$Rank); return(y)})
+
+
+
+# almost every research topics have either increasing or decreasing trend because of their initial rank which was almost the same in all topics
+
+river_topics_period <- split(river_research_rank %>% filter(Period != "< 1980s"), f = river_research_rank$`Research Topics`)
+
+river_topics_period_MK <- lapply(river_topics_period, function(x){y <- MannKendall(x$Rank); return(y)})
+
+
+# almost every research topics have either increasing or decreasing trend because of their initial rank which was almost the same in all topics
+
+river_topics_period_no2020 <- split(river_research_rank %>% filter(Period != "2020"), f = river_research_rank$`Research Topics`)
+
+river_topics_period_no2020_MK <- lapply(river_topics_period_no2020, function(x){y <- MannKendall(x$Rank); return(y)})
