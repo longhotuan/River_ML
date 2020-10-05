@@ -45,7 +45,12 @@ library(ggvis)
 library(scales) # Make color gradient scales
 library(dendextend) # make dendrogram plots
 library(ggdendro) # make dendrogram plots
+
 # Import datasets  ####
+#** Fixing neural networks' keywords
+# --> Combine neural networks and deep learning since they are interwined. 
+# In fact, it is the number of node layers, or depth, of neural networks that distinguishes a single neural network 
+# from a deep learning algorithm, which must have more than three.
 
 list_river_mlvised <- list.files(pattern = "*.csv")
 river_ml_data <- lapply(list_river_mlvised, read_csv)
@@ -233,7 +238,7 @@ ml_type <- tribble(
     "Big_data", "Big Data",
     "Clustering", "Unsupervised Learning",
     "Decision trees", "Supervised Learning",
-    "Deep_learning", "Deep Learning",
+    "Deep_learning", "Deep Learning", # it's ok
     "Discriminant_analysis", "Supervised Learning",
     "Ensemble", "Supervised Learning",
     "Feature selection", "Supervised Learning",
@@ -245,8 +250,6 @@ ml_type <- tribble(
     "Matrix factorization", "Unsupervised Learning",
     "Multiclass", "Supervised Learning",
     "Naive Bayes", "Supervised Learning",
-    "Neural network", "Unsupervised Learning",
-    "Neural networks", "Supervised Learning",
     "Reinforcement_learning", "Reinforcement Learning",
     "SGD", "Supervised Learning",
     "SVM", "Supervised Learning"
@@ -269,11 +272,12 @@ river_ml_data$Period <- relevel(river_ml_data$Period, "< 1980s")
 
 
 # Categorize research to different research topics ####
+#** (NEED TO DO) check whether the publications don't belong to any research topics account for a big proportion of the total publications ####
 
 topic_list <- c("Water Quality/Pollution", "Heavy Metal", "Climate Change", "Land use change", "Sediment", "Eutrophication", "Groundwater",
                 "Hydrology", "Estuaries", "Hydropower and dams", "Biodiversity", "Antibiotic resistance", "Drinking water", "Fisheries", 
-                "Management", "Aquatic environment", "Biogeochemistry", "Public health", "Movement", "Spatiotemporal trends", "Microbial")
-
+                "Management", "Aquatic environment", "Biogeochemistry", "Public health", "Movement", "Spatiotemporal trends", "Microbial",
+                "Emerging contaminants", "Gas fluxes", "Others")
 
 river_ml_data[, topic_list] <- NA
 
@@ -292,7 +296,8 @@ river_ml_data$`Land use change`[str_detect(str_to_lower(river_ml_data$`Author Ke
 
 river_ml_data$Sediment[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "sediment*")] <- 1
 
-river_ml_data$Eutrophication[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "eutrophic*|entrich*|nutrient*|nitrogen*|phoph*|nitrat*")] <- 1
+river_ml_data$Eutrophication[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "eutrophic*|entrich*|nutrient*|nitrogen*|phoph*|
+                                        nitrat*")] <- 1
 
 
 river_ml_data$Groundwater[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "ground water|groundwater*|underground")] <- 1
@@ -326,22 +331,42 @@ river_ml_data$`Aquatic environment`[str_detect(str_to_lower(river_ml_data$`Autho
 
 river_ml_data$Biogeochemistry[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "biogeochemi*|geochemi*|isotope|
                                          biogeograph*|holocene")] <- 1
-
+# changes in public health
 river_ml_data$`Public health`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "disease*|illness*|sick*|human health|
-                                         public health|health risk*|health care|physical health|mental|maternal|child*")] <- 1
+                                        public health|health risk*|health care|physical health|mental|maternal|child*|outbreak*|epidem*|erupt*|
+                                         contagi*|infect*|plague*|coli*|diarrhoea*|diarrhea*|cancer*|virus*|syndrome*|endemic*|pathogen*|hygien*")] <- 1
+# change in movement
+river_ml_data$Movement[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern ="move*|migrat*|bypass*|passag*")] <- 1
 
-river_ml_data$Movement[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern ="move*|migrat")] <- 1
 river_ml_data$`Spatiotemporal trends`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "temporal*|season*|spati*")] <- 1
 river_ml_data$Microbial[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "microbi|16s rdna|fluorescence")] <- 1
 
+# new in emerging contaminants  
+river_ml_data$`Emerging contaminants`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "pharmac*|medicin*|personal care*|
+                                                 endocrine disrupt*|pesticid*|perfluorinat*|sweeten*|drug*|flame retardant*|corros* inhibit*|
+                                                 plastic*|surfactant*|microplastic*|nanoplastic*|nano pesticide*|nano-pesticide*|nanopesticide*|
+                                                 nano fertilizer*|nano-fertilizer*|nanofertilizer*|steroid*|food additive*|preservative*|
+                                                 metabolic regulator*|detergent*|antioxidant*|industrial compound*|caffeine*|nicotine*|antibiot*|
+                                                 emerging contamina*|emerging pollut*")] <- 1
+# new in gas fluxes
+river_ml_data$`Gas fluxes`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "nitrous*|carbon dioxide*|greenhous*|CO2*|methan*|
+                                      CH4*|N2O*|flux*|emission*|ghg*|dissolved gas*|atmospher*")] <- 1
+
+
+
+# fill the publications that don't belong to any research topics with others 
+
+river_ml_data$Others[rowSums(!is.na(river_ml_data[ , which(colnames(river_ml_data) == "Water Quality/Pollution"):which(colnames(river_ml_data) == "Gas fluxes")])) == 0] <- 1 # too many almost third have other research topics
+
 # Categorize research to different modelling techniques ####
 # model validation, model evaluation, hyperparameter tuning, sensitivity analysis, uncertainty analysis, model selection, model optimization
+#** (NEED TO DO) check whether the publications don't belong to any modeling techniques accounting for a big proportion of the total publications ####
 
 model_list <- c("Model validation", "Model evaluation", "Model optimization", "Model selection", 
-                "Hyperparameter tuning", "Sensitivity analysis", "Uncertainty analysis")
+                "Hyperparameter tuning", "Sensitivity analysis", "Uncertainty analysis", "Other modeling methods")
 
 
-river_ml_data[, model_list] <- 0
+river_ml_data[, model_list] <- NA
 
 river_ml_data$`Model validation`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "cross validation|cross-validation|model valid*|
                                             three-fold|three fold|3-fold|3 fold|k-fold|k fold|ten fold|ten-fold|10 fold|10-fold|leave one out|loo|
@@ -397,7 +422,16 @@ river_ml_data$`Uncertainty analysis`[str_detect(str_to_lower(river_ml_data$`Auth
                                                 uncertainty assess*|uncertainty characteri*|uncertainty matri*|error propagat*|Monte Carlo|
                                                 statistical uncertaint*|model uncertaint*|data uncertainty engine|due|output uncertaint*")] <-1
 
+river_ml_data$`Other methods`[rowSums(!is.na(river_ml_data[ , which(colnames(river_ml_data) == "Model validation"):which(colnames(river_ml_data) == "Uncertainty analysis")])) == 0] <- 1 # not many 4794 publications
+
+# change NA to 0 
+
+
+
 # save the file ####
+#** (NEED TO DO) to-do jobs: transform the columns describing the research topics and modeling techniques to characteristic types ####
+
+
 river_ml_data_final <- river_ml_data %>% select(-Affi, -Country)
 river_ml_data_final$id <- as.factor(river_ml_data_final$id)
 river_ml_data_final$id <- factor(river_ml_data_final$id, labels = c("Associate rule", "Big data", "Clustering", "Decision trees", "Deep learning",
@@ -1339,24 +1373,14 @@ ml_den$id[c(9:11,13, 15, 17:21)] <- c("Gaussian processes", "Human interpretable
 rownames(ml_den) <- ml_den$id
 ml_den <- ml_den %>% select(-id)
 
-# dendrogram base plots
-# dd <- dist(scale(ml_den), method = "manhattan")
-# hc <- hclust(dd, method = "ward.D")
-# plot(hc)
-# library("ape")
-# colors <- seq_gradient_pal("blue", "red", "Lab")(seq(0,1,length.out=5))
-# clus4 = cutree(hc, 5)
-# plot(as.phylo(hc), tip.color = colors[clus4],
-#      label.offset = 1, cex = 0.7)
-
 # ggplot dendrogram 
-
 
 dend <- ml_den %>%
     dist(method = "manhattan") %>%
     hclust(method = "ward.D") %>%
     as.dendrogram() %>% 
     set("branches_k_color", value = colors, k = 5)
+
 # Rectangular lines
 ddata <- as.ggdend(dend)
 
@@ -1371,12 +1395,15 @@ ml_dendogram_graph <- ggplot(ddata,horiz = TRUE, theme = NULL) +
 ml_dendogram_graph
 ggsave("ml_dendrogram.jpeg", ml_dendogram_graph , units = 'cm', height = 20, width = 40, dpi = 300)
 
-
 ml_dendro_editable <- dml(ggobj = ml_dendogram_graph)
 ml_dendro_doc <- read_pptx()
 ml_dendro_doc <- add_slide(ml_dendro_doc)
 ml_dendro_doc <- ph_with(x = ml_dendro_doc, value = ml_dendro_editable, location = ph_location_type(type = "body"))
 print(ml_dendro_doc, target = "ml_dendro.pptx")
+
+# (NEED TO DO) Dendrogram for Research Topics ####
+
+
 
 # Mann-Kendall trend test in research topics ####
 # 1. Your data isn’t collected seasonally (e.g. only during the summer and winter months), because the test won’t work if alternating upward and downward trends exist in the data. Another test—the Seasonal Kendall Test—is generally used for seasonally collected data.
