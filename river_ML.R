@@ -272,74 +272,113 @@ river_ml_data$Period <- relevel(river_ml_data$Period, "< 1980s")
 
 
 # Categorize research to different research topics ####
-#** (NEED TO DO) check whether the publications don't belong to any research topics account for a big proportion of the total publications ####
-
+# the publications don't belong to any research topics (2.7k) to Others
+# detect in both authors and inndex keywords
 topic_list <- c("Water Quality/Pollution", "Heavy Metal", "Climate Change", "Land use change", "Sediment", "Eutrophication", "Groundwater",
                 "Hydrology", "Estuaries", "Hydropower and dams", "Biodiversity", "Antibiotic resistance", "Drinking water", "Fisheries", 
                 "Management", "Aquatic environment", "Biogeochemistry", "Public health", "Movement", "Spatiotemporal trends", "Microbial",
-                "Emerging contaminants", "Gas fluxes", "Others")
+                "Emerging contaminants", "Gas fluxes", "Economics", "Social development", "Others")
 
 river_ml_data[, topic_list] <- NA
 
 river_ml_data$`Water Quality/Pollution`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), 
-                                                   pattern = "water quality|wqi|pollut*|contaminat*|wastewater|acidifi*|treatment")] <- 1
+                                                   pattern = "water quality|wqi|pollut*|contaminat*|wastewater|acidifi*|treatment")|
+                                            str_detect(str_to_lower(river_ml_data$`Index Keywords`), 
+                                                       pattern = "water quality|wqi|pollut*|contaminat*|wastewater|acidifi*|treatment")] <- 1
 river_ml_data$`Heavy Metal`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), 
                                        pattern = "heavy metal*|mercury|lead*|cadimum*|copper*|chromium*|nickel*|arsenic*|manganese*|
+                                       cobalt*|zinc*|selenium*|silver*|antimony*|thallium*|metal*|metalloid*|radium*|bioaccumulat*|
+                                       bioavailability|copper*|iron*")|
+                                str_detect(str_to_lower(river_ml_data$`Index Keywords`), 
+                                           pattern = "heavy metal*|mercury|lead*|cadimum*|copper*|chromium*|nickel*|arsenic*|manganese*|
                                        cobalt*|zinc*|selenium*|silver*|antimony*|thallium*|metal*|metalloid*|radium*|bioaccumulat*|
                                        bioavailability|copper*|iron*")] <- 1
 
 river_ml_data$`Climate Change`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "climate change*|global warming|
-                                          climate warming*|kyoto protocol|paris agreement|palaeoclimat*|climate polic*|climate")] <- 1
+                                          climate warming*|kyoto protocol|paris agreement|palaeoclimat*|climate polic*|climate")|
+                                   str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern = "climate change*|global warming|
+                                          climate warming*|kyoto protocol|paris agreement|palaeoclimat*|climate polic*|climate") ] <- 1
 
 river_ml_data$`Land use change`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "land use*|landscape|land-use|
+                                           urban*|land cover|regulated river*")|
+                                    str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern = "land use*|landscape|land-use|
                                            urban*|land cover|regulated river*")] <- 1
 
-river_ml_data$Sediment[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "sediment*")] <- 1
+river_ml_data$Sediment[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "sediment*|riverbed*|river bed|river-bed")|
+                           str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern = "sediment*|riverbed*|river bed|river-bed") ] <- 1
 
 river_ml_data$Eutrophication[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "eutrophic*|entrich*|nutrient*|nitrogen*|phoph*|
+                                        nitrat*")|
+                                 str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern = "eutrophic*|entrich*|nutrient*|nitrogen*|phoph*|
                                         nitrat*")] <- 1
 
-
-river_ml_data$Groundwater[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "ground water|groundwater*|underground")] <- 1
+river_ml_data$Groundwater[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "ground water|groundwater*|underground") |
+                              str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern = "ground water|groundwater*|underground")] <- 1
 
 river_ml_data$Hydrology[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "hydrolog*|flood|precipitation|
                                         streamflow|drought|runoff|run-off|surface water|rain*|landslide|floodplain|stream*|discharge|
+                                        erosion*|riparian|flow|regime*")|
+                            str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern = "hydrolog*|flood|precipitation|
+                                        streamflow|drought|runoff|run-off|surface water|rain*|landslide|floodplain|stream*|discharge|
                                         erosion*|riparian|flow|regime*")] <- 1
 
-river_ml_data$Estuaries[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "estuar*|salin*")] <- 1
+river_ml_data$Estuaries[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "estuar*|salin*")|
+                            str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern = "estuar*|salin*")] <- 1
 
 river_ml_data$`Hydropower and dams`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "hydropower*|hydroelectric*|
+                                               hydro power|dam*|weir*|embankment*|dike*|ditch*|wall*|barrier*|levee*|bank*")|
+                                        str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern = "hydropower*|hydroelectric*|
                                                hydro power|dam*|weir*|embankment*|dike*|ditch*|wall*|barrier*|levee*|bank*")] <- 1
 
 river_ml_data$Biodiversity[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "biodivers*|diversit*|macroinvertebrate*|fish|zoo*|
                                       phyto*|commmunit*|diatom|species*|abundance*|macrophyte*|algae*|cyanobacteria|insect*|trout*|richness*|
+                                      macrozoobethos*|chronomidae|otolith*")|
+                               str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern = "biodivers*|diversit*|macroinvertebrate*|fish|zoo*|
+                                      phyto*|commmunit*|diatom|species*|abundance*|macrophyte*|algae*|cyanobacteria|insect*|trout*|richness*|
                                       macrozoobethos*|chronomidae|otolith*")] <- 1
 
-river_ml_data$`Antibiotic resistance`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "antibiotic*")] <- 1
+river_ml_data$`Antibiotic resistance`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "antibiotic*")|
+                                          str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern = "antibiotic*")] <- 1
 
-river_ml_data$`Drinking water`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "drink*|tap|potable|human consum*")] <- 1
+river_ml_data$`Drinking water`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "drink*|tap|potable|human consum*")|
+                                   str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern = "drink*|tap|potable|human consum*")] <- 1
 
 river_ml_data$Fisheries[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "fisher*|aquacult*|aquafarm*|fish* yield|
+                                   fish* harvest*|fish* sustainab*|fish* stock*")|
+                            str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern = "fisher*|aquacult*|aquafarm*|fish* yield|
                                    fish* harvest*|fish* sustainab*|fish* stock*")] <- 1
 
 river_ml_data$Management[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "decision|directive*|manage*|sustainable develop*|
+                                   guidline*|strateg*|DPSIR|policymak*|decision-mak*|decision mak*|decisionmak*|polic*")|
+                             str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern = "decision|directive*|manage*|sustainable develop*|
                                    guidline*|strateg*|DPSIR|policymak*|decision-mak*|decision mak*|decisionmak*|polic*")] <- 1
 
 river_ml_data$`Aquatic environment`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "dissolved oxygen|DO|temperature|
                                                environment|vegetration|turbid*|organic matter|cod|bod|doc|chlorophyll|escherichia coli|coliform*|
+                                               ph|influencing factor*|physicochemical")|
+                                        str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern = "dissolved oxygen|DO|temperature|
+                                               environment|vegetration|turbid*|organic matter|cod|bod|doc|chlorophyll|escherichia coli|coliform*|
                                                ph|influencing factor*|physicochemical")] <- 1
 
 river_ml_data$Biogeochemistry[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "biogeochemi*|geochemi*|isotope|
+                                         biogeograph*|holocene")|
+                                  str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern = "biogeochemi*|geochemi*|isotope|
                                          biogeograph*|holocene")] <- 1
 # changes in public health
 river_ml_data$`Public health`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "disease*|illness*|sick*|human health|
                                         public health|health risk*|health care|physical health|mental|maternal|child*|outbreak*|epidem*|erupt*|
+                                         contagi*|infect*|plague*|coli*|diarrhoea*|diarrhea*|cancer*|virus*|syndrome*|endemic*|pathogen*|hygien*")|
+                                  str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern = "disease*|illness*|sick*|human health|
+                                        public health|health risk*|health care|physical health|mental|maternal|child*|outbreak*|epidem*|erupt*|
                                          contagi*|infect*|plague*|coli*|diarrhoea*|diarrhea*|cancer*|virus*|syndrome*|endemic*|pathogen*|hygien*")] <- 1
 # change in movement
-river_ml_data$Movement[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern ="move*|migrat*|bypass*|passag*")] <- 1
+river_ml_data$Movement[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern ="move*|migrat*|bypass*|passag*")|
+                           str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern ="move*|migrat*|bypass*|passag*")] <- 1
 
-river_ml_data$`Spatiotemporal trends`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "temporal*|season*|spati*")] <- 1
-river_ml_data$Microbial[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "microbi|16s rdna|fluorescence")] <- 1
+river_ml_data$`Spatiotemporal trends`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "temporal*|season*|spati*")|
+                                          str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern = "temporal*|season*|spati*")] <- 1
+river_ml_data$Microbial[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "microbi|16s rdna|fluorescence")|
+                            str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern = "microbi|16s rdna|fluorescence")] <- 1
 
 # new in emerging contaminants  
 river_ml_data$`Emerging contaminants`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "pharmac*|medicin*|personal care*|
@@ -347,23 +386,44 @@ river_ml_data$`Emerging contaminants`[str_detect(str_to_lower(river_ml_data$`Aut
                                                  plastic*|surfactant*|microplastic*|nanoplastic*|nano pesticide*|nano-pesticide*|nanopesticide*|
                                                  nano fertilizer*|nano-fertilizer*|nanofertilizer*|steroid*|food additive*|preservative*|
                                                  metabolic regulator*|detergent*|antioxidant*|industrial compound*|caffeine*|nicotine*|antibiot*|
+                                                 emerging contamina*|emerging pollut*")|
+                                          str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern = "pharmac*|medicin*|personal care*|
+                                                 endocrine disrupt*|pesticid*|perfluorinat*|sweeten*|drug*|flame retardant*|corros* inhibit*|
+                                                 plastic*|surfactant*|microplastic*|nanoplastic*|nano pesticide*|nano-pesticide*|nanopesticide*|
+                                                 nano fertilizer*|nano-fertilizer*|nanofertilizer*|steroid*|food additive*|preservative*|
+                                                 metabolic regulator*|detergent*|antioxidant*|industrial compound*|caffeine*|nicotine*|antibiot*|
                                                  emerging contamina*|emerging pollut*")] <- 1
 # new in gas fluxes
 river_ml_data$`Gas fluxes`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "nitrous*|carbon dioxide*|greenhous*|CO2*|methan*|
+                                      CH4*|N2O*|flux*|emission*|ghg*|dissolved gas*|atmospher*")|
+                               str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern = "nitrous*|carbon dioxide*|greenhous*|CO2*|methan*|
                                       CH4*|N2O*|flux*|emission*|ghg*|dissolved gas*|atmospher*")] <- 1
 
 
+# new in economics 
+
+river_ml_data$Economics[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "cost|costs|market*|pric*|invest|investment*|financi*|
+                                   compan*|profit*|privat*|sector*|stock*|incooperat*")|
+                            str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern = "cost|costs|market*|pric*|invest|investment*|financi*|
+                                   compan*|profit*|privat*|sector*|stock*|incooperat*")] <- 1
+
+# new in social development
+
+river_ml_data$`Social development`[str_detect(str_to_lower(river_ml_data$`Author Keywords`), pattern = "urban*|suburban*|city|cities|
+                                              metropolitan*|rural*")|
+                                       str_detect(str_to_lower(river_ml_data$`Index Keywords`), pattern = "urban*|suburban*|city|cities|
+                                              metropolitan*|rural*")] <- 1
 
 # fill the publications that don't belong to any research topics with others 
 
-river_ml_data$Others[rowSums(!is.na(river_ml_data[ , which(colnames(river_ml_data) == "Water Quality/Pollution"):which(colnames(river_ml_data) == "Gas fluxes")])) == 0] <- 1 # too many almost third have other research topics
+river_ml_data$Others[rowSums(!is.na(river_ml_data[ , which(colnames(river_ml_data) == "Water Quality/Pollution"):which(colnames(river_ml_data) == "Social development")])) == 0] <- 1 # now around 2.7k 
 
 # Categorize research to different modelling techniques ####
 # model validation, model evaluation, hyperparameter tuning, sensitivity analysis, uncertainty analysis, model selection, model optimization
-#** (NEED TO DO) check whether the publications don't belong to any modeling techniques accounting for a big proportion of the total publications ####
+# the publications don't belong to any modeling techniques (4.7k) --> other technique
 
 model_list <- c("Model validation", "Model evaluation", "Model optimization", "Model selection", 
-                "Hyperparameter tuning", "Sensitivity analysis", "Uncertainty analysis", "Other modeling methods")
+                "Hyperparameter tuning", "Sensitivity analysis", "Uncertainty analysis", "Other methods")
 
 
 river_ml_data[, model_list] <- NA
@@ -421,16 +481,19 @@ river_ml_data$`Uncertainty analysis`[str_detect(str_to_lower(river_ml_data$`Auth
                                        str_detect(str_to_lower(river_ml_data$Abstract), pattern = "uncertainty analys*|uncertainty propagat*|
                                                 uncertainty assess*|uncertainty characteri*|uncertainty matri*|error propagat*|Monte Carlo|
                                                 statistical uncertaint*|model uncertaint*|data uncertainty engine|due|output uncertaint*")] <-1
+# fill the publications that don't belong to any research topics with others 
 
 river_ml_data$`Other methods`[rowSums(!is.na(river_ml_data[ , which(colnames(river_ml_data) == "Model validation"):which(colnames(river_ml_data) == "Uncertainty analysis")])) == 0] <- 1 # not many 4794 publications
 
+
 # change NA to 0 
 
-
+river_no_na <- river_ml_data[,513:546]
+river_no_na[is.na(river_no_na)] <- 0
+river_ml_data[,513:546] <- NULL
+river_ml_data <- bind_cols(river_ml_data, river_no_na)
 
 # save the file ####
-#** (NEED TO DO) to-do jobs: transform the columns describing the research topics and modeling techniques to characteristic types ####
-
 
 river_ml_data_final <- river_ml_data %>% select(-Affi, -Country)
 river_ml_data_final$id <- as.factor(river_ml_data_final$id)
@@ -438,19 +501,23 @@ river_ml_data_final$id <- factor(river_ml_data_final$id, labels = c("Associate r
                                                     "Discriminant Analysis", "Ensemble methods", "Feature selection","Gaussian processes", 
                                                     "Human interpretable information extraction", "Nearest neighbors", "Linear models", 
                                                     "Manifold learning", "Matrix factorization","Multiclass and multilabel algorithms", "Naive Bayes", 
-                                                    "Supervised neural networks", "Unsupervised neural networks", "Reinforcement learning", 
-                                                    "Stochastic Gradient Descent", "Support Vector Machines"))
+                                                    "Reinforcement learning", "Stochastic Gradient Descent", "Support Vector Machines"))
 
+# transform the columns describing the research topics and modeling techniques to characteristic types
 
-river_ml_short <- river_ml_data[,c(1:str_which(colnames(river_ml_data), "Country"), str_which(colnames(river_ml_data), "Period"):ncol(river_ml_data))]
+for (i in 511:541){
+    river_ml_data_final[river_ml_data_final[,i ] == 1, i] <- colnames(river_ml_data_final)[i]
+}
 
 write_csv(river_ml_data_final, "river_ml_data.csv")
 write_feather(river_ml_data_final, "river_ml_data.feather")
 rm(ml_type, river_ml_data_country, river_ml_data_lat, river_ml_data_long, list_river_mlvised)
 
+river_ml_short <- river_ml_data[,c(1:str_which(colnames(river_ml_data), "Country"), str_which(colnames(river_ml_data), "Period"):ncol(river_ml_data))]
+
 # Temporal trends of research topics (NOT SO GOOD) #### 
 
-river_research <- river_ml_short[,c(1,2,str_which(colnames(river_ml_short), "Period"):str_which(colnames(river_ml_short), "Microbial"))]
+river_research <- river_ml_short[,c(1,2,str_which(colnames(river_ml_short), "Period"):str_which(colnames(river_ml_short), "Others"))]
 river_research[is.na(river_research)] <- 0
 river_research$ML <- as.factor(river_research$ML)
 river_research$ML <- factor(river_research$ML, 
@@ -531,12 +598,12 @@ ggsave("research_period.jpeg", ggplot(river_research_period %>% filter(Period !=
            # scale_color_brewer(palette = "Dark2") +
            theme(text=element_text(size=16),
                  strip.text.x = element_text(size=12),
-                 axis.text = element_text(size=8.5),
-                 axis.title = element_text(size=14),
+                 axis.text = element_text(size=12),
+                 axis.title = element_text(size=16),
                  legend.position = "bottom",
                  legend.title = element_blank(),
                  legend.text = element_text(size = 12))
-       ,  units = 'cm', height = 20, width = 30, dpi = 300)
+       ,  units = 'cm', height = 30, width = 45, dpi = 300)
 
 
 #** Temporal trends of research rank (GOOD) ####
@@ -562,7 +629,7 @@ ggsave("research_rank.jpeg", ggplot(river_research_rank %>% filter(Period != "< 
                  legend.position = "bottom",
                  legend.title = element_blank(),
                  legend.text = element_text(size = 12))
-       ,  units = 'cm', height = 20, width = 30, dpi = 300)
+       ,  units = 'cm', height = 30, width = 45, dpi = 300)
 
 # divide into group  increase/decrease and stable
 river_research_rank$Trends <- NA
@@ -643,8 +710,8 @@ plot_rank_group <- ggplot(river_research_rank, aes(x = Period, y= Rank, group = 
     geom_text(data = river_research_rank[river_research_rank$Period == "2020", ][1:9,], 
               aes(label = river_research_rank$Rank[river_research_rank$Period == "2020"][1:9]),
                             hjust = -1.05 ,vjust = 0.5, size = 6) +
-    geom_text(data = river_research_rank[river_research_rank$Period == "2020", ][10:21,], 
-              aes(label = river_research_rank$Rank[river_research_rank$Period == "2020"][10:21]),
+    geom_text(data = river_research_rank[river_research_rank$Period == "2020", ][10:26,], 
+              aes(label = river_research_rank$Rank[river_research_rank$Period == "2020"][10:26]),
               hjust = -0.5 ,vjust = 0.5, size = 6) 
 plot_rank_group
 ggsave("research_rank_grouped_color.jpeg", plot_rank_group
@@ -665,7 +732,7 @@ river_trend_decade_err <- list(aggregate(data = river_research_rank, Rank ~ `Res
 
 colnames(river_trend_decade_err)[2:4] <- c("Mean rank", "Min rank", "Max rank")
 
-cc <- seq_gradient_pal("blue", "red", "Lab")(seq(0, 1, length.out=21))
+cc <- seq_gradient_pal("blue", "red", "Lab")(seq(0, 1, length.out=26))
 
 # reorder research topic order based on mean rank
 
@@ -677,16 +744,16 @@ plot_rank_decade <- ggplot(river_trend_decade_err, aes(y = `Research Topics`, x 
     geom_point(aes(size = 0.5, color = `Research Topics`)) + 
     geom_errorbar(aes(xmin=`Min rank`, xmax=`Max rank`, color = `Research Topics`), width=0,
                   position=position_dodge(0.05)) + 
-    scale_x_continuous(position = "top", limits = c(0,21)
+    scale_x_continuous(position = "top", limits = c(0,26)
                        ,expand = c(0, 0)# remove the gap between axis and plot area
                        ) + 
     scale_colour_manual(values=cc) + 
     theme_classic() + 
-    geom_text(data = river_trend_decade_err[1:12,], # by dividing this into smaller dataframes we can have it in different sides
+    geom_text(data = river_trend_decade_err[1:13,], # by dividing this into smaller dataframes we can have it in different sides
               aes(label = `Research Topics`, x = `Max rank` +3),
               # hjust = -1.05 ,
               vjust = 0.25, size = 5) +
-    geom_text(data = river_trend_decade_err[13:21,], # by dividing this into smaller dataframes we can have it in different sides
+    geom_text(data = river_trend_decade_err[14:26,], # by dividing this into smaller dataframes we can have it in different sides
               aes(label = `Research Topics`, x = `Min rank` -3),
               # hjust = -1.05 ,
               vjust = 0.25, size = 5) +
@@ -707,7 +774,7 @@ plot_rank_decade <- ggplot(river_trend_decade_err, aes(y = `Research Topics`, x 
 
 plot_rank_decade
 
-ggsave("research_rank_decade.jpeg", plot_rank_decade,  units = 'cm', height = 20, width = 20, dpi = 300)
+ggsave("research_rank_decade.jpeg", plot_rank_decade,  units = 'cm', height = 30, width = 30, dpi = 300)
 
 plot_rank_decade_editable <- dml(ggobj = plot_rank_decade)
 plot_rank_decade_doc <- read_pptx()
@@ -717,7 +784,7 @@ print(plot_rank_decade_doc, target = "research_rank_decade.pptx")
 
 #** Rank variability over years (NOT SO GOOD)####
 
-river_rank_year <- river_ml_short[,c(1,2, str_which(colnames(river_ml_short), "Year"), (str_which(colnames(river_ml_short), "Period")+1):str_which(colnames(river_ml_short), "Microbial"))]
+river_rank_year <- river_ml_short[,c(1,2, str_which(colnames(river_ml_short), "Year"), (str_which(colnames(river_ml_short), "Period")+1):str_which(colnames(river_ml_short), "Others"))]
 river_rank_year$ML <- as.factor(river_rank_year$ML)
 river_rank_year$ML <- factor(river_rank_year$ML, levels = c("Supervised Learning", "Unsupervised Learning",
                                                           "Deep Learning", "Reinforcement learning",
@@ -756,7 +823,7 @@ ggsave("research_rank_year.jpeg", ggplot(river_trend_year %>% filter(Year > 1979
           legend.position = "bottom",
           legend.title = element_blank(),
           legend.text = element_text(size = 12))
-     ,units = 'cm', height = 20, width = 30, dpi = 300)
+     ,units = 'cm', height = 30, width = 45, dpi = 300)
 
 .# making point + error bar
 # make a new tibble 
@@ -768,7 +835,7 @@ river_trend_point_err <- list(aggregate(data = river_trend_year[river_trend_year
 
 colnames(river_trend_point_err)[2:4] <- c("Mean rank", "Min rank", "Max rank")
 
-cc <- seq_gradient_pal("blue", "red", "Lab")(seq(0,1,length.out=21))
+cc <- seq_gradient_pal("blue", "red", "Lab")(seq(0,1,length.out=26))
 
 plot_rank_year <- ggplot(river_trend_point_err, aes(y = `Research Topics`, x =`Mean rank`)) +
     geom_point(aes(size = 0.5, color = `Research Topics`)) + 
@@ -793,7 +860,7 @@ plot_rank_year <- ggplot(river_trend_point_err, aes(y = `Research Topics`, x =`M
           axis.ticks.y = element_blank(),
           legend.position = "none")
 
-plot_rank_year
+plot_rank_year # very bad
 ggsave("rank_year.jpeg", plot_rank_year,  units = 'cm', height = 20, width = 30, dpi = 300)
 
 # Temporal trends of ML types ####
@@ -858,12 +925,11 @@ ml_topics$id <- as.factor(ml_topics$id)
 #                                                  "Big data", "Stochastic Gradient Descent", "Gausian processes", "Feature selection",
 #                                                  "Associate rule", "Naive Bayes", "Reinforcement learning", "Multiclass and multilabel algorithms"))
 
-ml_topics$id <- factor(ml_topics$id, labels = c("Associate rule", "Big data", "Clustering", "Decision trees", "Deep learning",
+ml_topics$id <- factor(ml_topics$id, labels = c("Associate rule", "Big data", "Clustering", "Decision trees", "Deep learning & Neural Networks",
                                                 "Discriminant Analysis", "Ensemble methods", "Feature selection","Gaussian processes", 
                                                 "Human interpretable information extraction", "Nearest neighbors", "Linear models", 
                                                 "Manifold learning", "Matrix factorization","Multiclass and multilabel algorithms", "Naive Bayes", 
-                                                "Unsupervised neural networks", "Supervised neural networks", "Reinforcement learning", 
-                                                "Stochastic Gradient Descent", "Support Vector Machines"))
+                                                "Reinforcement learning", "Stochastic Gradient Descent", "Support Vector Machines"))
 
 # make rank
 ml_rank <- ml_topics %>% 
@@ -876,7 +942,7 @@ ggplot(ml_rank %>% filter(Year > 1979), aes(x = Year, y= Rank, group = id)) +
     geom_point() +
     geom_line() +
     theme_bw() +
-    ylab("Total number of publications") +
+    ylab("Rank of Machine Learning") +
     facet_wrap(.~ id, scales = "free_y") +
     scale_y_reverse() +
     # scale_color_brewer(palette = "Dark2") +
@@ -906,12 +972,11 @@ ml_topics_2$id <- as.factor(ml_topics_2$id)
 #                                                  "Big data", "Stochastic Gradient Descent", "Gausian processes", "Feature selection",
 #                                                  "Associate rule", "Naive Bayes", "Reinforcement learning", "Multiclass and multilabel algorithms"))
 
-ml_topics_2$id <- factor(ml_topics_2$id, labels = c("Associate rule", "Big data", "Clustering", "Decision trees", "Deep learning",
+ml_topics_2$id <- factor(ml_topics_2$id, labels = c("Associate rule", "Big data", "Clustering", "Decision trees", "Deep learning & Neural networks",
                                                 "Discriminant Analysis", "Ensemble methods", "Feature selection","Gaussian processes", 
                                                 "Human interpretable information extraction", "Nearest neighbors", "Linear models", 
-                                                "Manifold learning", "Matrix factorization","Multiclass and multilabel algorithms", "Naive Bayes", 
-                                                "Supervised neural networks", "Unsupervised neural networks", "Reinforcement learning", 
-                                                "Stochastic Gradient Descent", "Support Vector Machines"))
+                                                "Manifold learning", "Matrix factorization","Multiclass & multilabel algorithms", "Naive Bayes", 
+                                                "Reinforcement learning", "Stochastic Gradient Descent", "Support Vector Machines"))
 
 
 # make rank
@@ -928,7 +993,7 @@ ml_rank_2_err <- list(aggregate(data = ml_rank_2, Rank ~ id, FUN = mean),
                     aggregate(data = ml_rank_2, Rank ~ id, FUN = max)) %>% reduce(full_join, by = "id")
 
 colnames(ml_rank_2_err)[2:4] <- c("Mean rank", "Min rank", "Max rank")
-cc_2 <- seq_gradient_pal("blue", "red", "Lab")(seq(0,1,length.out=21))
+cc_2 <- seq_gradient_pal("blue", "red", "Lab")(seq(0,1,length.out=19))
 
 ml_rank_2_err$id <- reorder(ml_rank_2_err$id, -ml_rank_2_err$`Mean rank`)
 ml_rank_2_err <- ml_rank_2_err %>% arrange(`Mean rank`)
@@ -937,7 +1002,7 @@ plot_ml_rank_2_decade <- ggplot(ml_rank_2_err, aes(y = id, x =`Mean rank`)) +
     geom_point(aes(size = 0.5, color = id)) + 
     geom_errorbar(aes(xmin=`Min rank`, xmax=`Max rank`, color = id), width=0,
                   position=position_dodge(0.05)) + 
-    scale_x_continuous(position = "top", limits = c(0,21)
+    scale_x_continuous(position = "top", limits = c(0,19)
                        ,expand = c(0, 0)# remove the gap between axis and plot area
     ) + 
     scale_colour_manual(values=cc_2) + 
@@ -947,38 +1012,38 @@ plot_ml_rank_2_decade <- ggplot(ml_rank_2_err, aes(y = id, x =`Mean rank`)) +
               # hjust = -1.05 ,
               vjust = 0.25, size = 5) +
     geom_text(data = ml_rank_2_err[3,], # by dividing this into smaller dataframes we can have it in different sides
-              aes(label = id, x = `Max rank` +3),
-              # hjust = -1.05 ,
-              vjust = 0.25, size = 5) +
-    geom_text(data = ml_rank_2_err[4,], # by dividing this into smaller dataframes we can have it in different sides
               aes(label = id, x = `Max rank` +4.2),
               # hjust = -1.05 ,
               vjust = 0.25, size = 5) +
-    geom_text(data = ml_rank_2_err[5:9,], # by dividing this into smaller dataframes we can have it in different sides
+    geom_text(data = ml_rank_2_err[4:5,], # by dividing this into smaller dataframes we can have it in different sides
               aes(label = id, x = `Max rank` +2),
+              # hjust = -1.05 ,
+              vjust = 0.25, size = 5) +
+    geom_text(data = ml_rank_2_err[6,], # by dividing this into smaller dataframes we can have it in different sides
+              aes(label = id, x = `Max rank` +4.2),
+              # hjust = -1.05 ,
+              vjust = 0.25, size = 5) +
+    geom_text(data = ml_rank_2_err[7:8,], # by dividing this into smaller dataframes we can have it in different sides
+              aes(label = id, x = `Max rank` +2),
+              # hjust = -1.05 ,
+              vjust = 0.25, size = 5) +
+    geom_text(data = ml_rank_2_err[9,], # by dividing this into smaller dataframes we can have it in different sides
+              aes(label = id, x = `Min rank` -2),
               # hjust = -1.05 ,
               vjust = 0.25, size = 5) +
     geom_text(data = ml_rank_2_err[10:11,], # by dividing this into smaller dataframes we can have it in different sides
-              aes(label = id, x = `Max rank` +3),
+              aes(label = id, x = `Max rank` + 2),
               # hjust = -1.05 ,
               vjust = 0.25, size = 5) +
-    geom_text(data = ml_rank_2_err[12,], # by dividing this into smaller dataframes we can have it in different sides
-              aes(label = id, x = `Max rank` +2),
-              # hjust = -1.05 ,
-              vjust = 0.25, size = 5) +
-    geom_text(data = ml_rank_2_err[13:14,], # by dividing this into smaller dataframes we can have it in different sides
-              aes(label = id, x = `Min rank` -2),
-              # hjust = -1.05 ,
-              vjust = 0.25, size = 5) +
-    geom_text(data = ml_rank_2_err[15,], # by dividing this into smaller dataframes we can have it in different sides
+    geom_text(data = ml_rank_2_err[12:15,], # by dividing this into smaller dataframes we can have it in different sides
               aes(label = id, x = `Min rank` -3),
               # hjust = -1.05 ,
               vjust = 0.25, size = 5) +
-    geom_text(data = ml_rank_2_err[16:20,], # by dividing this into smaller dataframes we can have it in different sides
+    geom_text(data = ml_rank_2_err[16:18,], # by dividing this into smaller dataframes we can have it in different sides
               aes(label = id, x = `Min rank` -2),
               # hjust = -1.05 ,
               vjust = 0.25, size = 5) +
-    geom_text(data = ml_rank_2_err[21,], # by dividing this into smaller dataframes we can have it in different sides
+    geom_text(data = ml_rank_2_err[19,], # by dividing this into smaller dataframes we can have it in different sides
               aes(label = id, x = `Min rank` -3),
               # hjust = -1.05 ,
               vjust = 0.25, size = 5) +
@@ -1361,20 +1426,20 @@ ggsave(filename = "river_ml_journal.jpeg", save_topjournal(river_ml_short),  uni
 
 # Dendorgram for ML ####
 
-ml_dendogram <- river_ml_short[, c(which(colnames(river_ml_short) == "id"), (which(colnames(river_ml_short) == "Period")+1):str_which(colnames(river_ml_short), "Microbial"))]
+ml_dendogram <- river_ml_short[, c(which(colnames(river_ml_short) == "id"), (which(colnames(river_ml_short) == "Period")+1):str_which(colnames(river_ml_short), "Others"))]
 ml_dendogram[is.na(ml_dendogram)] <- 0
 ml_den <- aggregate(data = ml_dendogram, . ~ id, FUN = sum)
 ml_den$id[2] <- "Big data"
-ml_den$id[5] <- "Deep learning"
+ml_den$id[5] <- "Deep learning & Neural networks"
 ml_den$id[6:7] <- c("Discriminant Analysis", "Ensemble methods")
-ml_den$id[c(9:11,13, 15, 17:21)] <- c("Gaussian processes", "Human interpretable information extraction", "Nearest neighbors", "Manifold learning",
-                                      "Multiclass and multilabel algorithms", "Supervised neural networks", "Unsupervised neural networks",
+ml_den$id[c(9:11,13, 15, 17:19)] <- c("Gaussian processes", "Human interpretable information extraction", "Nearest neighbors", "Manifold learning",
+                                      "Multiclass and multilabel algorithms", 
                                       "Reinforcement learning", "Stochastic Gradient Descent", "Support Vector Machines")
 rownames(ml_den) <- ml_den$id
 ml_den <- ml_den %>% select(-id)
 
 # ggplot dendrogram 
-
+set.seed(1235)
 dend <- ml_den %>%
     dist(method = "manhattan") %>%
     hclust(method = "ward.D") %>%
@@ -1409,10 +1474,10 @@ print(ml_dendro_doc, target = "ml_dendro.pptx")
 # 1. Your data isn’t collected seasonally (e.g. only during the summer and winter months), because the test won’t work if alternating upward and downward trends exist in the data. Another test—the Seasonal Kendall Test—is generally used for seasonally collected data.
 # 2. Your data does not have any covariates—other factors that could influence your data other than the ones you’re plotting. See Covariates for more information.
 # 3. You have only one data point per time period. If you have multiple points, use the median value.
-# yearly trend
+# yearly trend --> most of them changing 
 
 river_topics <- split(river_trend_year, f = river_trend_year$`Research Topics`)
-river_topics_MK <- lapply(river_topics, function(x){y <- MannKendall(x$Rank); return(y)})
+river_topics_MK <- lapply(river_topics, function(x){y <- MannKendall(x$Rank); return(y)}) 
 
 
 # yearly trend but after 1980s
