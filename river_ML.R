@@ -505,13 +505,17 @@ river_ml_data_final$id <- factor(river_ml_data_final$id, labels = c("Associate r
 
 # transform the columns describing the research topics and modeling techniques to characteristic types
 
-for (i in 511:541){
+for (i in which(colnames(river_ml_data_final) == "Water Quality/Pollution"):which(colnames(river_ml_data_final) == "Other methods")){
     river_ml_data_final[river_ml_data_final[,i ] == 1, i] <- colnames(river_ml_data_final)[i]
+}
+
+for (i in which(colnames(river_ml_data_final) == "Water Quality/Pollution"):which(colnames(river_ml_data_final) == "Other methods")){
+    river_ml_data_final[river_ml_data_final[,i ] == 0, i] <- NA
 }
 
 write_csv(river_ml_data_final, "river_ml_data.csv")
 write_feather(river_ml_data_final, "river_ml_data.feather")
-rm(ml_type, river_ml_data_country, river_ml_data_lat, river_ml_data_long, list_river_mlvised)
+# rm(ml_type, river_ml_data_country, river_ml_data_lat, river_ml_data_long, list_river_mlvised)
 
 river_ml_short <- river_ml_data[,c(1:str_which(colnames(river_ml_data), "Country"), str_which(colnames(river_ml_data), "Period"):ncol(river_ml_data))]
 
@@ -689,8 +693,12 @@ rank_research <- tibble(`Research Topics` = levels(river_research_rank$`Research
 river_research_rank <- left_join(river_research_rank, rank_research, by = "Research Topics")
 
 cols <- c("Increasing" = "red", "Decreasing" = "blue", "Stable" = "violet")
+cc_model <- seq_gradient_pal("dodgerblue3", "firebrick1", "Lab")(seq(0,1,length.out=35))
 
-plot_rank_group <- ggplot(river_research_rank, aes(x = Period, y= Rank, group = `Research Topics`)) + # Good graph 
+river_research_rank$`Research Topics`[river_research_rank$`Research Topics` == "Others"] <- "Misc"
+
+
+plot_rank_group_new <- ggplot(river_research_rank, aes(x = Period, y= Rank, group = `Research Topics`)) + # Good graph 
     geom_point(aes(color = Trends, size = 1.01)) +
     geom_line(aes(color = Trends, size = 1.005, alpha = 0.8)) +
     theme_bw() +
@@ -698,8 +706,9 @@ plot_rank_group <- ggplot(river_research_rank, aes(x = Period, y= Rank, group = 
     xlab("Periods") +
     facet_wrap(.~Trends, ncol = 2) +
     scale_y_reverse() +
-    # scale_colour_manual(values = cols, ) +
-    scale_color_brewer(palette = "Reds", direction=-1) +
+    scale_colour_manual(values = cc_model[c(1,30,15)]) +
+
+    # scale_color_brewer(palette = "Blues", direction=-1) +
     theme(text=element_text(size=22),
           strip.text.x = element_text(size=20),
           axis.text = element_text(size=18),
@@ -713,8 +722,8 @@ plot_rank_group <- ggplot(river_research_rank, aes(x = Period, y= Rank, group = 
     geom_text(data = river_research_rank[river_research_rank$Period == "2020", ][10:26,], 
               aes(label = river_research_rank$Rank[river_research_rank$Period == "2020"][10:26]),
               hjust = -0.5 ,vjust = 0.5, size = 6) 
-plot_rank_group
-ggsave("research_rank_grouped_color.jpeg", plot_rank_group
+plot_rank_group_new
+ggsave("research_rank_grouped_color_new.jpeg", plot_rank_group_blue
        ,  units = 'cm', height = 40, width = 30, dpi = 300)
 
 plot_rank_group_editable <- dml(ggobj = plot_rank_group)
@@ -938,7 +947,7 @@ ml_rank <- ml_topics %>%
     mutate(Rank = rank(desc(n), ties.method = "min"))
 
 # see the trends (for data exploration)
-ggplot(ml_rank %>% filter(Year > 1979), aes(x = Year, y= Rank, group = id)) +
+ggsave("ml_yearly_rank.jpeg", ggplot(ml_rank %>% filter(Year > 1979), aes(x = Year, y= Rank, group = id)) +
     geom_point() +
     geom_line() +
     theme_bw() +
@@ -953,6 +962,7 @@ ggplot(ml_rank %>% filter(Year > 1979), aes(x = Year, y= Rank, group = id)) +
           legend.position = "bottom",
           legend.title = element_blank(),
           legend.text = element_text(size = 12))
+    , units = 'cm', height = 20, width = 30, dpi = 300)
 
 #** ML ranks in different period (BETTER THAN YEARS) ####
 
@@ -993,7 +1003,7 @@ ml_rank_2_err <- list(aggregate(data = ml_rank_2, Rank ~ id, FUN = mean),
                     aggregate(data = ml_rank_2, Rank ~ id, FUN = max)) %>% reduce(full_join, by = "id")
 
 colnames(ml_rank_2_err)[2:4] <- c("Mean rank", "Min rank", "Max rank")
-cc_2 <- seq_gradient_pal("blue", "red", "Lab")(seq(0,1,length.out=19))
+cc_2 <- seq_gradient_pal("dodgerblue3", "firebrick1", "Lab")(seq(0,1,length.out=19))
 
 ml_rank_2_err$id <- reorder(ml_rank_2_err$id, -ml_rank_2_err$`Mean rank`)
 ml_rank_2_err <- ml_rank_2_err %>% arrange(`Mean rank`)
@@ -1005,7 +1015,7 @@ plot_ml_rank_2_decade <- ggplot(ml_rank_2_err, aes(y = id, x =`Mean rank`)) +
     scale_x_continuous(position = "top", limits = c(0,19)
                        ,expand = c(0, 0)# remove the gap between axis and plot area
     ) + 
-    scale_colour_manual(values=cc_2) + 
+    scale_colour_manual(values=rev(cc_2)) + 
     theme_classic() + 
     geom_text(data = ml_rank_2_err[1:2,], # by dividing this into smaller dataframes we can have it in different sides
               aes(label = id, x = `Max rank` +2),
@@ -1089,7 +1099,7 @@ river_modeling_period <- aggregate(data = river_modeling_period, .~Period, sum)
 river_modeling_period <- river_modeling_period %>% pivot_longer(cols = -c(Period), names_to = "Modeling methods", values_to = "Number of publications")
 river_modeling_total <- river_ml_short %>% group_by(Period) %>% summarise(n=n())
 river_modeling_period <- left_join(river_modeling_period, river_modeling_total, by= "Period") %>% mutate(Percentage = round(`Number of publications`*100/n, digits =2))
-cc_model <- seq_gradient_pal("blue", "red", "Lab")(seq(0,1,length.out=21))
+cc_model <- seq_gradient_pal("dodgerblue3", "firebrick1", "Lab")(seq(0,1,length.out=35))
 
 
 river_modeling_period$`Modeling methods` <- as.factor(river_modeling_period$`Modeling methods`)
@@ -1098,8 +1108,8 @@ river_modeling_period$`Modeling methods` <- factor(river_modeling_period$`Modeli
                                                               "Sensitivity analysis", "Model optimization", "Hyperparameter tuning"))
 river_modeling_period <- river_modeling_period[with(river_modeling_period, order(Period, Percentage)),]
 
-ggsave("modeling_methods_period.jpeg", ggplot(river_modeling_period, 
-                                              aes(x = Period, y= Percentage, group = `Modeling methods`)) +
+ggsave("modeling_methods_period.jpeg", 
+       ggplot(river_modeling_period, aes(x = Period, y= Percentage, group = `Modeling methods`)) +
          geom_point(aes(color = `Modeling methods`, size = 0.7)) +
          geom_line(aes(color = `Modeling methods`, size = 0.5)) +
          theme_bw() +
@@ -1107,30 +1117,33 @@ ggsave("modeling_methods_period.jpeg", ggplot(river_modeling_period,
          xlab("Periods") +
          # facet_wrap(.~`Modeling methods`, scales = "free_y") +
          # scale_color_brewer(palette = "Dark2") +
-         scale_colour_manual(values=cc_model[rev(seq(0,21,by = 3))]) + 
+         scale_colour_manual(values=cc_model[rev(c(25,23,18,13,8,3,1))]) + 
          # guides(size = FALSE) +
          geom_text(data = river_modeling_period[river_modeling_period$Period == "2020", ], 
                    aes(label = c(7:1)),
                    hjust = -1.5 ,
                    vjust = 0.5, size = 5) +
+         guides(size = FALSE) +
          theme(text=element_text(size=18),
                # strip.text.x = element_text(size=12),
                axis.text = element_text(size=14),
                axis.title = element_text(size=16),
-               legend.position = "none",
+               legend.position = "bottom",
                legend.title = element_text(size = 16),
-               legend.text = element_text(size = 14))
+               legend.text = element_text(size = 14),
+               legend.key.width = unit(1.5, "cm"))
        ,  units = 'cm', height = 30, width = 30, dpi = 300)
 ggsave("modeling_methods_period2.jpeg", ggplot(river_modeling_period, 
                                                aes(x = Period, y= Percentage, group = `Modeling methods`)) +
          geom_point(aes(color = `Modeling methods`, size = 0.7)) +
+         # guides(color = guide_legend(override.aes = list(size=4))) +
          geom_line(aes(color = `Modeling methods`, size = 0.5)) +
          theme_bw() +
          ylab("Percentage of the publications (%)") +
          xlab("Periods") +
          # facet_wrap(.~`Modeling methods`, scales = "free_y") +
-         scale_color_brewer(palette = "Paired",direction = -1) +
-         # scale_colour_manual(values=cc_model[rev(seq(0,21,by = 3))]) + 
+         # scale_color_brewer(palette = "Paired",direction = -1) +
+         scale_colour_manual(values=cc_model[rev(c(25,23,18,13,8,3,1))]) +
          guides(size = FALSE) +
          # geom_text(data = river_modeling_period[river_modeling_period$Period == "2020", ], 
          #           aes(label = c(7:1)),
@@ -1142,7 +1155,11 @@ ggsave("modeling_methods_period2.jpeg", ggplot(river_modeling_period,
                axis.title = element_text(size=18),
                legend.position = "bottom",
                legend.title =element_blank(),
-               legend.text = element_text(size = 16))
+               legend.text = element_text(size = 16)
+               # legend.key.width = unit(1.5, "cm"),
+               # legend.key.height = unit(1.5, "cm")
+               )
+       
        ,  units = 'cm', height = 20, width = 30, dpi = 300)
 
 
@@ -1153,7 +1170,7 @@ list_ml_affi <- lapply(list_ml, read.delim, sep = "\t", stringsAsFactors = FALSE
 names(list_ml_affi) <- str_split_fixed(list_ml,pattern = "\\.", n =2)[,1]
 ml_affi <- rbindlist(list_ml_affi, idcol = TRUE)
 ml_affi$.id <- as.factor(ml_affi$.id)
-
+cc_wm <- seq_gradient_pal("dodgerblue3", "firebrick1", "Lab")(seq(0, 1, length.out=30))
 # remove overlapped countries in one publication 
 
 t1 <- data.frame()
@@ -1181,12 +1198,12 @@ ml_affi_country$Percentage <- round(ml_affi_country$Percentage, digits = 0)
 ml_affi_country$Code <- countrycode(ml_affi_country$Country, 'country.name', 'iso3c')
 ml_affi_country <- ml_affi_country[complete.cases(ml_affi_country),]
 ml_affi_map <- joinCountryData2Map(ml_affi_country, joinCode = "ISO3", nameJoinColumn = "Code") # name of some countries is not correct
-  
-jpeg("map_ml_affi.jpeg", units = 'px', height = 1500, width = 2500, res = 300, pointsize = 8)
+
+jpeg("map_ml_affi_color.jpeg", units = 'px', height = 1500, width = 2500, res = 300, pointsize = 8)
 mapParams <- mapCountryData(ml_affi_map, nameColumnToPlot = "n", 
                             addLegend=FALSE,
                             numCats = 10, mapRegion = "world", catMethod = "logFixedWidth",
-                            colourPalette = brewer.pal(10,"PuBuGn"),
+                            colourPalette = cc_wm[c(23,18,13,8,3,1)],
                             borderCol = "grey",
                             mapTitle = "",
                             missingCountryCol = "white")
@@ -1372,59 +1389,58 @@ save_citation <- function(x, y){
 
 write_csv(save_citation(river_ml_data_final, 100), "river_ml_citation.csv")
 
-# total_citation <- function(x, z){
-#     y <- sum(x$`Cited by`, na.rm = TRUE)
-#     t <- data.frame(z, y)
-#     colnames(t) <- c("SDG", "Citation")
-#     return(t)
-# }
-
 # Publication years
-save_pubyear <- function(x){
-    y <- x %>% select(Year,`Document Type`, `Access Type`) %>% 
-        dplyr::group_by(Year) %>% 
-        dplyr::summarise(n=n()) %>% 
-        dplyr::arrange(Year) %>% 
-        dplyr::filter(Year < 2021)
-    # z <- as.data.frame(ave(y$n, FUN = cumsum))
-    # colnames(z) <- "cum"
-    # y <- bind_cols(y, z)
-    t <- ggplot(y, aes(x=Year, y=n))+
-        geom_point(size = 2) +
-        # geom_smooth(colour="gray20", size =0.5, method = "lm") +
-        labs(x = "Years", y = "Cumulative publications", fill = NULL, title = NULL) +
-        # scale_x_continuous(breaks = c(2008:2020))+
-        theme_bw()+
-        theme(text = element_text(size = 16))
-}
 
-ggsave(filename = "river_ml_pubyear.jpeg", save_pubyear(river_ml_short),  units = 'cm', height = 20, width = 20, dpi = 300)
+river_ml_short$id <- as.factor(river_ml_short$id)
+
+river_ml_short$id <- factor(river_ml_short$id, labels = c("Associate rule", "Big data", "Clustering", "Decision trees", "Deep learning & Neural Networks",
+                                                "Discriminant Analysis", "Ensemble methods", "Feature selection","Gaussian processes", 
+                                                "Human interpretable information extraction", "Nearest neighbors", "Linear models", 
+                                                "Manifold learning", "Matrix factorization","Multiclass and multilabel algorithms", "Naive Bayes", 
+                                                "Reinforcement learning", "Stochastic Gradient Descent", "Support Vector Machines"))
+
+
+river_pub_year <- river_ml_short %>% select(Year,`Document Type`, `Access Type`, id) %>% 
+    dplyr::group_by(Year, id) %>% 
+    dplyr::summarise(n=n()) %>% 
+    dplyr::arrange(Year) %>% 
+    dplyr::filter(Year < 2021) %>% 
+    ggplot(aes(x=Year, y=n)) +
+    geom_point(size = 2) +
+    labs(x = "Years", y = "Cumulative publications", fill = NULL, title = NULL) +
+    facet_wrap(.~ id, scales = "free_y") +
+    theme_bw()+
+    theme(text=element_text(size=16),
+          strip.text.x = element_text(size=12),
+          axis.text = element_text(size=11),
+          axis.title = element_text(size=14))
+
+ggsave(filename = "river_ml_pubyear.jpeg", river_pub_year,  units = 'cm', height = 20, width = 20, dpi = 300)
 
 # Top Journal 
-save_topjournal <- function(x){
-    y <- x %>% select(`Source title`) %>% 
-        dplyr::group_by(`Source title`) %>% 
-        dplyr::summarise(n=n()) %>% 
-        dplyr::arrange(desc(n)) %>% 
-        slice(1:20) %>% 
-        ggplot(aes(x=reorder(`Source title`, n),y = n)) +
-        geom_bar(stat = "identity",
-                 position = position_stack(reverse = TRUE), 
-                 fill = "tomato") +
-        coord_flip() +
-        theme_bw() +
-        xlab("Journals") +
-        ylab("Number of publications") +
-        theme(text=element_text(family = "Arial")) +
-        theme(axis.text.x = element_text(size = 14)) +
-        theme(axis.text.y = element_text(size = 14)) +
-        theme(axis.title = element_text(size = 14)) +
-        theme(axis.title.y = element_blank())
-}
+river_top_journal <- river_ml_short %>% select(`Source title`) %>% 
+    dplyr::group_by(`Source title`) %>% 
+    dplyr::summarise(n=n()) %>% 
+    dplyr::arrange(desc(n)) %>% 
+    slice(1:20) %>% 
+    ggplot(aes(x=reorder(`Source title`, n),y = n)) +
+    geom_bar(stat = "identity",
+             position = position_stack(reverse = TRUE), 
+             fill = "tomato") +
+    coord_flip() +
+    theme_bw() +
+    xlab("Journals") +
+    ylab("Number of publications") +
+    theme(text=element_text(family = "Arial")) +
+    theme(axis.text.x = element_text(size = 14)) +
+    theme(axis.text.y = element_text(size = 14)) +
+    theme(axis.title = element_text(size = 14)) +
+    theme(axis.title.y = element_blank())
 
-ggsave(filename = "river_ml_journal.jpeg", save_topjournal(river_ml_short),  units = 'cm', height = 20, width = 40, dpi = 300)
 
-# Dendorgram for ML ####
+ggsave(filename = "river_ml_journal.jpeg", river_top_journal,  units = 'cm', height = 20, width = 40, dpi = 300)
+
+# Dendorgram for ML types regarding research topics ####
 
 ml_dendogram <- river_ml_short[, c(which(colnames(river_ml_short) == "id"), (which(colnames(river_ml_short) == "Period")+1):str_which(colnames(river_ml_short), "Others"))]
 ml_dendogram[is.na(ml_dendogram)] <- 0
@@ -1452,19 +1468,20 @@ ddata <- as.ggdend(dend)
 ml_dendogram_graph <- ggplot(ddata,horiz = TRUE, theme = NULL) +
     theme_void() +
     xlab("Height") +
-    ylim(40000, -10000) +
+    scale_colour_manual(values=cc_model[c(25,18,13,8,3,1)]) + 
+    # ylim(40000, -10000) +
     theme(text=element_text(size=16),
           axis.text = element_blank(),
           axis.title = element_blank(),
           axis.ticks = element_blank())
 ml_dendogram_graph
-ggsave("ml_dendrogram.jpeg", ml_dendogram_graph , units = 'cm', height = 20, width = 40, dpi = 300)
+ggsave("ml_dendrogram_new.jpeg", ml_dendogram_graph , units = 'cm', height = 20, width = 40, dpi = 300)
 
 ml_dendro_editable <- dml(ggobj = ml_dendogram_graph)
 ml_dendro_doc <- read_pptx()
 ml_dendro_doc <- add_slide(ml_dendro_doc)
 ml_dendro_doc <- ph_with(x = ml_dendro_doc, value = ml_dendro_editable, location = ph_location_type(type = "body"))
-print(ml_dendro_doc, target = "ml_dendro.pptx")
+print(ml_dendro_doc, target = "ml_dendro_new.pptx")
 
 # (NEED TO DO) Dendrogram for Research Topics ####
 
@@ -1475,33 +1492,37 @@ print(ml_dendro_doc, target = "ml_dendro.pptx")
 # 2. Your data does not have any covariates—other factors that could influence your data other than the ones you’re plotting. See Covariates for more information.
 # 3. You have only one data point per time period. If you have multiple points, use the median value.
 # yearly trend --> most of them changing 
-
+# The Tau-b statistic makes adjustments for ties.
+# Values of Tau-b range from −1 (100% negative association, or perfect inversion) to +1 (100% positive association, or perfect agreement).
+# A value of zero indicates the absence of association.
 river_topics <- split(river_trend_year, f = river_trend_year$`Research Topics`)
 river_topics_MK <- lapply(river_topics, function(x){y <- MannKendall(x$Rank); return(y)}) 
-
 
 # yearly trend but after 1980s
 
 river_topics_aft_80s <- split(river_trend_year %>% filter(Year > 1979), f = river_trend_year$`Research Topics`)
 river_topics_80s_MK <- lapply(river_topics_aft_80s, function(x){y <- MannKendall(x$Rank); return(y)})
 
-
 # yearly trend but after 1990s
 
 river_topics_aft_90s <- split(river_trend_year %>% filter(Year > 1989), f = river_trend_year$`Research Topics`)
 river_topics_90s_MK <- lapply(river_topics_aft_90s, function(x){y <- MannKendall(x$Rank); return(y)})
 
-
-
 # almost every research topics have either increasing or decreasing trend because of their initial rank which was almost the same in all topics
 
 river_topics_period <- split(river_research_rank %>% filter(Period != "< 1980s"), f = river_research_rank$`Research Topics`)
-
 river_topics_period_MK <- lapply(river_topics_period, function(x){y <- MannKendall(x$Rank); return(y)})
 
 
 # almost every research topics have either increasing or decreasing trend because of their initial rank which was almost the same in all topics
 
 river_topics_period_no2020 <- split(river_research_rank %>% filter(Period != "2020"), f = river_research_rank$`Research Topics`)
-
 river_topics_period_no2020_MK <- lapply(river_topics_period_no2020, function(x){y <- MannKendall(x$Rank); return(y)})
+
+# Mann-Kendall trend test in ML types ####
+# yearly trend (good one)
+
+ml_rank_year <- split(ml_rank, f = ml_rank$id)
+ml_rank_MK <- lapply(ml_rank_year, function(x){y <- MannKendall(x$Rank); return(y)})
+
+
